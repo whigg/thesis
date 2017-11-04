@@ -32,12 +32,12 @@ erainterim-1403_60/
 ## コード解説
 <dl>
 <dt>L.2-8</dt>
-<dd>変数の定義．3行目のfilenameはいらないかも．
-u,v,psl: 速度u,vとpsl
-ret: csvに出力するための数値が入る配列
-count: ret用のポインタ
-fname: 出力先のファイル名（'~.csv'）
-x: output1.csvから読んだ入力ファイル名を格納
+<dd>変数の定義．3行目のfilenameはいらないかも．<br>
+u,v,psl: 速度u,vとpsl<br>
+ret: csvに出力するための数値が入る配列<br>
+count: ret用のポインタ<br>
+fname: 出力先のファイル名（'~.csv'）<br>
+x: output1.csvから読んだ入力ファイル名を格納<br>
 data: 2084個分の入力ファイル名を格納</dd>
 <dt>L.10-11</dt>
 <dd>output1.csvをヘッダを飛ばして読む．</dd>
@@ -64,6 +64,7 @@ data: 2084個分の入力ファイル名を格納</dd>
 
 ## 全体のファイル構造
 ※()は依存関係．
+
 1. erainterim-1403_60  
 	ecm030101.ads60  
 	ecm030102.ads60  
@@ -103,11 +104,13 @@ $ ./a.out
 
 
 ## 参考文献（リンク）
+
 1. [Fortran入門](http://nag-j.co.jp/fortran/index.html)
 2. [Fortran77](http://www.geocities.jp/eyeofeconomyandhealth/homepage/renshuu1.html)
 3. [csv読み込み](https://groups.google.com/forum/#!topic/comp.lang.fortran/1vL-UPZobqo)
 4. [Fortranで文字列配列を使う方法](http://d.hatena.ne.jp/spadeAJ/20110209/1297230406)
 5. [Fortran プログラムの構成](http://web.agr.ehime-u.ac.jp/~kishou/Lecture/atmosphere/Fortran90/Chap5.pdf)
-6. [ファイル入出力](http://ax-b.com/FPR1_2014/class601/slides/140607.09.array_file.pdf)  
+6. [ファイル入出力](http://ax-b.com/FPR1_2014/class601/slides/140607.09.array_file.pdf)
+
 ほか多数．
 
