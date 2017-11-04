@@ -1,4 +1,4 @@
-# Fortranによるバイナリデータの読み込みと，csvファイルへの出力
+# Fortranによるバイナリデータの読み込みとcsvファイルへの出力
 
 ## 環境
 + OS: macOS Sierra 10.12.6  
@@ -9,6 +9,7 @@
 ## 前提
 バイナリデータが複数与えられていたとする．今回は，速度データ（`erainterim-1403_60`）．  
 これをFortran77で読み込んで，バイナリではない数値の情報にcsvファイルとして出力・保存することを考える． 
+コードは`wind_csv_f`に置いた．  
 
 
 ## 読み込みデータの構造
@@ -31,13 +32,13 @@ erainterim-1403_60/
 ## コード解説
 <dl>
 <dt>L.2-8</dt>
-<dd>変数の定義．3行目のfilenameはいらないかも．</dd>
-<dd>u,v,psl: 速度u,vとpsl</dd>
-<dd>ret: csvに出力するための数値が入る配列</dd>
-<dd>count: ret用のポインタ</dd><br>
-<dd>fname: 出力先のファイル名（~.csv）</dd>
-<dd>x: output1.csvから読んだ入力ファイル名を格納</dd>
-<dd>data: 2084個分の入力ファイル名を格納</dd>
+<dd>変数の定義．3行目のfilenameはいらないかも．
+u,v,psl: 速度u,vとpsl
+ret: csvに出力するための数値が入る配列
+count: ret用のポインタ
+fname: 出力先のファイル名（'~.csv'）
+x: output1.csvから読んだ入力ファイル名を格納
+data: 2084個分の入力ファイル名を格納</dd>
 <dt>L.10-11</dt>
 <dd>output1.csvをヘッダを飛ばして読む．</dd>
 <dt>L.12-16</dt>
@@ -63,13 +64,13 @@ erainterim-1403_60/
 
 ## 全体のファイル構造
 ※()は依存関係．
-1. erainterim-1403_60
-	ecm030101.ads60
-	ecm030102.ads60
+1. erainterim-1403_60  
+	ecm030101.ads60  
+	ecm030102.ads60  
 	... (2084ファイル)
-2. wfname.py (<- 1)
-3. output1.csv (<- 2)
-4. data2py_1.f (<- 3)
+2. wfname.py (← 1)
+3. output1.csv (← 2)
+4. data2py_1.f (← 3)
 
 
 ## 出力
@@ -107,6 +108,6 @@ $ ./a.out
 3. [csv読み込み](https://groups.google.com/forum/#!topic/comp.lang.fortran/1vL-UPZobqo)
 4. [Fortranで文字列配列を使う方法](http://d.hatena.ne.jp/spadeAJ/20110209/1297230406)
 5. [Fortran プログラムの構成](http://web.agr.ehime-u.ac.jp/~kishou/Lecture/atmosphere/Fortran90/Chap5.pdf)
-6. [ファイル入出力](http://ax-b.com/FPR1_2014/class601/slides/140607.09.array_file.pdf)
+6. [ファイル入出力](http://ax-b.com/FPR1_2014/class601/slides/140607.09.array_file.pdf)  
 ほか多数．
 
