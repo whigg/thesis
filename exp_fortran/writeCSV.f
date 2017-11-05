@@ -6,7 +6,7 @@
       character linebuf*256
       real :: x(n) = (/ 1.2, 0.02, 0.0003, 4.2, 5.99 /)
       real :: y(n) = (/ 9.0, 0.0008, 0.37, 100000.6, 500.2 /)
-      open (18, file='mydata1.csv', status='replace')
+      open (18, file='mydata.csv', status='replace')
       do i = 1, n
         write (linebuf, *) x(i), ',', y(i) ! 一旦内部ファイルへ書き出す
         call del_spaces(linebuf)           ! 余分な空白を削除する
