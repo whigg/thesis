@@ -16,8 +16,8 @@ speed1 = np.sqrt(u1*u1 + v1*v1)
 
 df1 = pd.read_csv('latlon.csv', header=None)
 latlon = np.array(df1, dtype='float32')
-lon = latlon[:,2]
-lat = latlon[:,3]
+lon = latlon[:,3]
+lat = latlon[:,2]
 lons = np.reshape(latlon[:,2], (145,145), order = 'F')
 lats = np.reshape(latlon[:,3], (145,145), order = 'F')
 ###################################################################
@@ -35,7 +35,7 @@ lons, lats = m(lat,lon,inverse=False)
 m.plot(lons,lats,'bo', markersize=0.3)
 """
 
-x, y = m(lat, lon)
+x, y = m(lon, lat)
 x = np.reshape(x, (145,145), order='F')
 y = np.reshape(y, (145,145), order='F')
 print (x.shape)
