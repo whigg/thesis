@@ -1,0 +1,278 @@
+#データを読み込み、main_v.pyに返す関数群
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from tqdm import tqdm
+from datetime import datetime, date, timezone, timedelta
+
+import basic_file as b_f
+
+latlon145_file_name = b_f.latlon145_file_name
+latlon900_file_name = b_f.latlon900_file_name
+grid900to145_file_name = b_f.grid900to145_file_name
+ocean_grid_file = b_f.ocean_grid_file
+ocean_grid_145 = b_f.ocean_grid_145
+ocean_idx = b_f.ocean_idx
+
+########################################################################################
+#基本的なもの、テンプレ
+
+def get_lonlat(latlon145_file_name, array=False):
+	#緯度、経度情報の読み込み
+	#df_latlon = pd.read_csv(latlon145_file_name, header=None)
+	#latlon_exはheaderありなので注意
+	df_latlon = pd.read_csv(latlon145_file_name)
+	if array == False:
+		return df_latlon.Lon, df_latlon.Lat
+	else:
+		lon = np.array(df_latlon.Lon)
+		lat = np.array(df_latlon.Lat)
+		return lon, lat
+
+def get_lonlat_labels(latlon145_file_name):
+	#DataFrame型を返す
+	df_latlon = pd.read_csv(latlon145_file_name)
+	data = df_latlon.loc[:,["Label", "Name"]]
+	return data
+
+
+"""
+ある１日のデータをとってくるとき
+wind, ice, ic0
+"""
+def get_1day_w_data(wind_file_name):
+	df_wind = pd.read_csv(wind_file_name, header=None)
+	wind = np.array(df_wind, dtype='float32')
+	w_u = wind[:,0]
+	w_v = wind[:,1]
+	w_speed = np.sqrt(w_u*w_u + w_v*w_v)
+	return w_u, w_v, w_speed
+
+def get_1day_ice_data(ice_file_name):
+	df_ice_wind = pd.read_csv(ice_file_name, header=None)
+	w_true = df_ice_wind[df_ice_wind<999.].dropna()
+	idx_all = range(145*145)
+	idx_t = np.array(w_true.index)
+	idx_f = np.sort(list(set(idx_all)-set(idx_t)))
+
+	wind = np.array(df_ice_wind, dtype='float32')
+	u = wind[:,0]/100
+	v = wind[:,1]/100
+	iw_u = np.zeros(145*145)
+	iw_u[idx_t] = u[idx_t]
+	iw_u[idx_f] = np.nan
+	iw_v = np.zeros(145*145)
+	iw_v[idx_t] = v[idx_t]
+	iw_v[idx_f] = np.nan
+	iw_speed = np.sqrt(iw_u*iw_u+iw_v*iw_v)
+	iw_idx_t = idx_t
+	return iw_u, iw_v, iw_speed, iw_idx_t
+
+def get_1day_ic0_data(ic0_file_name, grid900to145_file_name):
+	#145x145グリッドのものを想定
+	grid_data = pd.read_csv(grid900to145_file_name, header=None)
+	grid145 = np.array(grid_data, dtype='int64').ravel()
+
+	ic0_data = pd.read_csv(ic0_file_name, header=None)
+	ic0 = np.array(ic0_data, dtype='float32').ravel()
+	ic0_145 = ic0[grid145]
+	ic0_idx_t = ~np.isnan(ic0_145)
+	return ic0_145, ic0_idx_t
+
+
+"""
+ある月の地衡風などのデータをとってくるとき
+"""
+def get_1month_coeff_data(coeff_file_name):
+	"""
+	風力係数、偏角データの読み込み
+	とりあえず返すのはすべてのデータ(DataFrame型)
+	偏角（度）
+	海流u
+	海流v
+	F
+	相関係数
+	回帰に使ったデータ数
+	平均海流u
+	平均海流v
+	海氷流速u
+	海氷流速v
+	"""
+	df_coeffs = pd.read_csv(coeff_file_name, sep=',', dtype='float32')
+	df_coeffs.columns = ["index", "angle", "ocean_u", "ocean_v", "A", "coef", "data_num", "mean_ocean_u", "mean_ocean_v", "mean_ice_u", "mean_ice_v"]
+	df_coeffs = df_coeffs.drop("index", axis=1)
+	df_coeffs[df_coeffs==999.] = np.nan
+
+	return df_coeffs
+
+
+"""
+時系列用
+"""
+def cvt_date(dt):
+	# "2013-01-01" -> "20130101"
+	return str(dt)[:10].replace('-', '')
+
+def get_ts_value(data, data_columns):
+	"""
+	data: regression data
+	data_columns: ['wind', 'ice', 'ic0_145', 'ic0_900', ...]
+	"""
+	#result = pd.to_datetime(date_ax)
+	#result = pd.DataFrame(date_ax)
+
+	#ある日の指定したdata_columnsの145x145行データ
+	tmp = data.loc[:, data_columns]
+
+	#tmpデータをあるスカラー値((data_columns,1)のレコード)にするための計算(平均，ある1グリッド，地域によるスピードの分散，...)
+	#df_value = f(tmp)
+
+	return df_value
+
+
+
+
+
+##############################################################################################
+
+def get_non_nan_idx(mat, ocean_idx, strict=True):
+	"""
+	mat: 複数のidx_tを結合したもの
+	strict: matを考慮するかどうか
+	"""
+	if strict==True:
+		data_idx = set(mat) & set(ocean_idx)
+		data_idx = np.sort(np.array(list(data_idx)))
+	else:
+		data_idx = np.sort(ocean_idx)
+
+	return data_idx
+
+################################################################################################
+#自分でデータを計算する場所
+
+"""
+風力係数などのデータ一式の取得
+"""
+def get_wind_ic0_regression_data(wind_file_name, ice_file_name, ic0_file_name, coeff_file_name, detail_level=0):
+	"""
+	1日ごとの地衡風と流氷速度と、30日分の平均海流を取ってきて、Aとthetaを計算
+	これに、１日ごとのic0のデータをくっつける
+	存在するインデックスのみ。nanは削除されている
+	"""
+	w_u, w_v, w_speed = get_1day_w_data(wind_file_name)
+	iw_u, iw_v, iw_speed, iw_idx_t = get_1day_ice_data(ice_file_name)
+	ic0_145, ic0_idx_t = get_1day_ic0_data(ic0_file_name, grid900to145_file_name)
+
+	df_coeffs = get_1month_coeff_data(coeff_file_name)
+	ary_coeffs = np.array(df_coeffs)	
+	mean_ocean_u = ary_coeffs[:, 6]
+	mean_ocean_v = ary_coeffs[:, 7]
+
+	real_iw_u = iw_u - mean_ocean_u
+	real_iw_v = iw_v - mean_ocean_v
+	real_iw_speed = np.sqrt(real_iw_u*real_iw_u + real_iw_v*real_iw_v)
+
+	A_by_day = real_iw_speed / w_speed
+	theta_by_day = (np.arctan2(real_iw_v, real_iw_u) - np.arctan2(w_v, w_u))*180/np.pi
+	idx1 = np.where(theta_by_day>=180)[0]
+	theta_by_day[idx1] = theta_by_day[idx1]-360
+	idx2 = np.where(theta_by_day<=-180)[0]
+	theta_by_day[idx2] = theta_by_day[idx2]+360
+
+	mat = iw_idx_t.ravel().tolist() + ic0_idx_t.ravel().tolist()
+	data_idx = get_non_nan_idx(mat, ocean_idx, strict=True)
+	data_index_145 = np.zeros(145*145)
+	data_index_145[data_idx] = 1
+
+	l_and_n = get_lonlat_labels(latlon145_file_name)
+
+	if detail_level == 0:
+		data = np.c_[data_index_145, A_by_day, theta_by_day, ic0_145]
+		data = pd.DataFrame(data)
+		data.columns = ["data_idx", "A_by_day", "theta_by_day", "ic0_145"]
+		data = pd.concat([data, l_and_n], axis=1)
+		return data
+	elif detail_level == 1:
+		data = np.c_[data_index_145, w_u, w_v, w_speed, 
+			iw_u, iw_v, iw_speed, 
+			mean_ocean_u, mean_ocean_v, real_iw_u, real_iw_v, real_iw_speed, 
+				A_by_day, theta_by_day, ic0_145]
+		data = pd.DataFrame(data)
+		data.columns = ["data_idx", "w_u", "w_v", "w_speed", 
+			"iw_u", "iw_v", "iw_speed", 
+			"mean_ocean_u", "mean_ocean_v", "real_iw_u", "real_iw_v", "real_iw_speed", 
+			"A_by_day", "theta_by_day", "ic0_145"]
+		data = pd.concat([data, l_and_n], axis=1)
+		return data
+	elif detail_level == 2:
+		lon, lat = get_lonlat(latlon145_file_name, array=True)
+		data = pd.DataFrame({
+			"data_idx": data_index_145, 
+			"Lon": lon, 
+			"Lat": lat, 
+			"w_u": w_u, 
+			"w_v": w_v, 
+			"w_speed": w_speed, 
+			"iw_u": iw_u, 
+			"iw_v": iw_v, 
+			"iw_speed": iw_speed, 
+			"A_by_day": A_by_day, 
+			"theta_by_day": theta_by_day, 
+			"ic0_145": ic0_145
+			})
+		#print (data.head(3))
+		data = pd.concat([data, df_coeffs.loc[:,["angle", "ocean_u", "ocean_v", 
+			"A", "coef", "data_num", "mean_ocean_u", "mean_ocean_v", "mean_ice_u", "mean_ice_v"]], l_and_n], axis=1)
+		#print (data.head(3))
+		return data
+
+def get_wind_ic0_regression_data_by_region(data, region, detail_level):
+	"""
+	地域ごとにデータを取得する
+	data: 上のdef get_wind_ic0_regression_data関数のdataの入力を仮定
+	region: ["bearing_sea", ...]
+	"""
+	region_all = list(data.Name.values.flatten())
+	region_nan = list(set(region_all)-set(region))
+
+	if detail_level == 0:
+		for area in region_nan:
+			data.loc[data.Name==area, ["A_by_day", "theta_by_day", "ic0_145"]] = np.nan
+	elif detail_level == 1:
+		for area in region_nan:
+			data.loc[data.Name==area, ["w_u", "w_v", "w_speed", 
+				"iw_u", "iw_v", "iw_speed", 
+				"mean_ocean_u", "mean_ocean_v", "real_iw_u", "real_iw_v", "real_iw_speed", 
+				"A_by_day", "theta_by_day", "ic0_145"
+			]] = np.nan
+	elif detail_level == 2:
+		for area in region_nan:
+			data.loc[data.Name==area, ["w_u", "w_v", "w_speed", 
+				"iw_u", "iw_v", "iw_speed", 
+				"A_by_day", "theta_by_day", "ic0_145", 
+				"angle", "ocean_u", "ocean_v", 
+				"A", "coef", "data_num", "mean_ocean_u", "mean_ocean_v", "mean_ice_u", "mean_ice_v"
+			]] = np.nan
+			#print (data.loc[data.Name==area, ["A_by_day", "Name"]])
+	#print (data.head())
+
+	return data
+
+
+
+
+
+
+
+
+
+
+
+################################################################################################
+
+
+
+
+
+
