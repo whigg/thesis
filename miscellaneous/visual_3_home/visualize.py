@@ -29,7 +29,6 @@ def plot_map_once(data, **kwargs):
 	show = kwargs["show"]
 	save_name = kwargs["save_name"]
 	vmax = kwargs["vmax"]
-	vmin = kwargs["vmin"]
 
 	m = Basemap(lon_0=180, boundinglat=50, resolution='i', projection='npstere')
 	fig = plt.figure(figsize=(6.5, 6.5))
@@ -55,7 +54,7 @@ def plot_map_once(data, **kwargs):
 		#plot_data[(plot_data>50) | (plot_data<-50)] = np.nan
 		data = np.ma.masked_invalid(data)
 		data1 = np.reshape(data, (145,145), order='F')
-		m.pcolormesh(x1, y1, data1, cmap=plt.cm.jet, vmax=vmax, vmin=vmin)
+		m.pcolormesh(x1, y1, data1, cmap=plt.cm.jet, vmax=vmax)
 		#m.pcolormesh(x1, y1, data1, cmap=plt.cm.jet)
 		m.colorbar(location='bottom')
 
@@ -75,7 +74,6 @@ def plot_map_multi(data_wind, data_non_wind, **kwargs):
 	show = kwargs["show"]
 	save_name = kwargs["save_name"]
 	vmax = kwargs["vmax"]
-	vmin = kwargs["vmin"]
 
 	m = Basemap(lon_0=180, boundinglat=50, resolution='i', projection='npstere')
 	fig = plt.figure(figsize=(6.5, 6.5))
@@ -96,7 +94,7 @@ def plot_map_multi(data_wind, data_non_wind, **kwargs):
 
 	m.quiver(x, y, vector_u, vector_v, vector_speed)
 	#m.quiver(x, y, vector_u, vector_v, vector_speed, angles='xy', scale_units='xy')
-	m.pcolormesh(x1, y1, data1, cmap=plt.cm.jet, vmax=vmax, vmin=vmin)
+	m.pcolormesh(x1, y1, data1, cmap=plt.cm.jet, vmax=vmax)
 	m.colorbar(location='bottom')
 
 
@@ -143,7 +141,6 @@ def visual_non_line(data, mode, save_name, show):
 		x_data, y_data = data[mode_2[0]], data[mode_2[1]]
 		#ここに必要な処理
 
-		#sns.lmplot(x=mode_2[0], y=mode_2[1], hue="Name", data=data)
 		sns.jointplot(x=x_data, y=y_data, kind="reg")
 		#sns.regplot(x=x_data, y=y_data)
 	elif mode_1 == "hist":

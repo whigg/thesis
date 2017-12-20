@@ -140,12 +140,11 @@ def get_w_regression_data(wind_file_name, ice_file_name, coeff_file_name):
 	idx2 = np.where(theta_by_day<=-180)[0]
 	theta_by_day[idx2] = theta_by_day[idx2]+360
 
-	mat = iw_idx_t.tolist()
+	mat = iw_idx_t.ravel().tolist()
 	data_idx = get_non_nan_idx(mat, ocean_idx, strict=True)
 	data_index_145 = np.zeros(145*145)
 	#データがある場所が1
-	if len(data_idx != 0):
-		data_index_145[data_idx] = 1
+	data_index_145[data_idx] = 1
 
 	data = pd.DataFrame({"data_idx": data_index_145, "A_by_day": A_by_day, "theta_by_day": theta_by_day})
 	return data

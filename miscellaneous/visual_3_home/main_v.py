@@ -75,8 +75,7 @@ def main_data(start, end, **kwargs):
 		wind10m_file_name = "../data/netcdf4/" + day[2:] + ".csv"
 		t2m_file_name = "../data/netcdf4/" + day[2:] + ".csv"
 
-		#if ("coeff" not in get_columns) and (not all([os.path.isfile(wind_file_name), os.path.isfile(ice_file_name), os.path.isfile(coeff_file_name), os.path.isfile(ic0_145_file_name)])):
-		if ("coeff" not in get_columns) and (not all([os.path.isfile(wind_file_name), os.path.isfile(ice_file_name), os.path.isfile(coeff_file_name)])):
+		if ("coeff" not in get_columns) and (not all([os.path.isfile(wind_file_name), os.path.isfile(ice_file_name), os.path.isfile(ic0_145_file_name), os.path.isfile(coeff_file_name)])):
 			print ("\tSkipping " + day + " file...")
 			date_ax_str.remove(day)
 			aa = day[:4]+"-"+day[4:6]+"-"+day[6:]
@@ -101,7 +100,7 @@ def main_data(start, end, **kwargs):
 			tmp, iw_idx_t = calc_data.get_1day_ice_data(ice_file_name)
 			data = pd.concat([data, tmp], axis=1)
 		if "ic0_145" in get_columns:
-			tmp, ic0_idx_t = calc_data.get_1day_ic0_data(ic0_145_file_name, grid900to145_file_name)
+			tmp, ic0_idx_t = calc_data.get_1day_ic0_data(ic0_file_name, grid900to145_file_name)
 			data = pd.concat([data, tmp], axis=1)
 		if "coeff" in get_columns:
 			tmp = calc_data.get_1month_coeff_data(coeff_file_name)
@@ -138,8 +137,9 @@ def main_data(start, end, **kwargs):
 		return date_ax, date_ax_str, skipping_date_str, data
 
 
-###################################################################################################################
+####################################################################################################################
 
+#Aのマップを月ごとに出力して保存するコード
 start_list = []
 n = 20000000
 y_list = [3,4,5,6,7,8,9,10,13,14,15,16]
@@ -167,27 +167,78 @@ for i, start in enumerate(start_list):
 
 	# latlon_exで絞り込む場合，ここに処理を書く
 	#data = pd.concat([latlon_ex, data], axis=1)
-	#print(data.head())
-	"""
-	data.loc[((data.A<0) & (data.angle<0))] += 180
-	data.loc[((data.A<0) & (data.angle>0))] -= 180
-	"""
-	
+	data.loc[data.A<0] *= -1
 	data[data.data_idx==0.] = np.nan
-	save_name = "../result/angle_30_original/angle_30_" + str(start)[:6] + ".png"
+	save_name = "../result/A_30/A_30_" + str(start)[:6] + ".png"
 
 	#visualize.pyで関数を選ぶ
 	visualize.plot_map_once(
-		data["angle"],
+		data["A"],
 		data_type="type_non_wind",
 		save_name=save_name,
 		show=False, 
-		vmax=180, 
-		vmin=-180
+		vmax=0.025
 		)
 	print("\n")
 
 
+"""
+#A_by_dayのマップを月ごとに出力して保存するコード
+start_list = []
+n = 20000000
+y_list = [3,4,5,6,7,8,9,10,13,14,15,16]
+for i in y_list:
+	m = n + i*10000
+	for j in range(12):
+		start_list.append(m + (j+1)*100 + 1)
+start_ex_list = [20170101, 20170201, 20170301, 20170401, 20170501, 20170601,20170701,20170801]
+start_list = np.sort(np.array(list(set(start_list)|set(start_ex_list)))).tolist()
+M = len(start_list)
+start_list_plus_1month = start_list + [20170901]
+
+start_list = [20030101]
+plot_kw = "A_by_day"
+for i, start in enumerate(start_list):
+	print("*******************  {}/{}  *******************".format(i+1, M))
+	month_end = start_list_plus_1month[i+1]
+	month_end = date(month_end//10000, (month_end%10000)//100, (month_end%10000)%100) - timedelta(days=1)
+	end = start + month_end.day - 1
+	date_ax, date_ax_str, skipping_date_str, data = main_data(
+		start, end, 
+		span=30, 
+		get_columns=["ex_1"], 
+		region=None, 
+		accumulate=True
+		)
+
+	data_array = np.array(data)
+	data_array = np.ma.masked_invalid(data_array)
+	data_count_nan = np.sum(data_array.recordmask, axis=0)
+	#print(data_count_nan)
+	#print(len(date_ax))
+	#print(len(date_ax_str))
+	data_ave = np.sum(data_array, axis=0) / (len(date_ax))
+	#A_by_dayなので0列目
+	data_ave = pd.DataFrame(data_ave[:, 0])
+	#print(data_ave)
+	data_ave.columns = [plot_kw]
+	# 閾値を設ける場合
+	#data_ave.loc[data_ave.plot_kw>=0.05, :] = np.nan
+
+	# data_aveにLabelとかNameをくっつける場合、以下のdataをmain_plotに渡す
+	# Labelなどで絞り込む場合は、ここに操作を付け足す
+	#data = pd.concat([latlon_ex, data], axis=1)
+
+	save_name = "../result/A_by_day_30/A_by_day_30_" + str(start)[:6] + ".png"
+	visualize.plot_map_once(
+		data_ave["A_by_day"],
+		save_name=save_name,
+		show=True, 
+		vmax=None
+		)
+	print("\n")
+
+"""
 
 
 
