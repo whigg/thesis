@@ -21,6 +21,22 @@ points = np.meshgrid(g, g)
 lon, lat = calc_data.get_lonlat(latlon145_file_name, array=True)
 
 #####################################################################
+
+from matplotlib.colors import LinearSegmentedColormap
+
+def generate_cmap(colors):
+    """自分で定義したカラーマップを返す"""
+    values = range(len(colors))
+
+    vmax = np.ceil(np.max(values))
+    color_list = []
+    for v, c in zip(values, colors):
+        color_list.append( ( v/ vmax, c) )
+    return LinearSegmentedColormap.from_list('custom_cmap', color_list)
+
+cm = generate_cmap(['blue', 'blue', 'lightgray', 'red', 'red'])
+
+#####################################################################
 #Basemapによる地図投影
 
 #1回のみの描画
@@ -34,18 +50,21 @@ def plot_map_once(data, **kwargs):
 	m = Basemap(lon_0=180, boundinglat=50, resolution='i', projection='npstere')
 	fig = plt.figure(figsize=(6.5, 6.5))
 	m.drawcoastlines(color = '0.15')
+	m.fillcontinents(color='#555555')
 
 	x, y = m(lon, lat)
 	x1 = np.reshape(x, (145,145), order='F')
 	y1 = np.reshape(y, (145,145), order='F')
 
 	if data_type == "type_wind":
+		print(data.columns)
 		data = np.array(data)
 		vector_u = np.ma.masked_invalid(data[:, 0])
 		vector_v = np.ma.masked_invalid(data[:, 1])
-		vector_speed = np.ma.masked_invalid(data[:, 2])
+		vector_speed = np.sqrt(vector_u*vector_u + vector_v*vector_v)
 		m.quiver(x, y, vector_u, vector_v, vector_speed)
-		#m.quiver(x, y, vector_u, vector_v, vector_speed, angles='xy', scale_units='xy')
+		#m.quiver(x, y, vector_u, vector_v, angles='xy', scale_units='xy')
+		#m.quiver(x, y, vector_u, vector_v)
 
 	elif data_type == "type_non_wind":
 		data = np.array(data)
@@ -56,6 +75,7 @@ def plot_map_once(data, **kwargs):
 		data = np.ma.masked_invalid(data)
 		data1 = np.reshape(data, (145,145), order='F')
 		m.pcolormesh(x1, y1, data1, cmap=plt.cm.jet, vmax=vmax, vmin=vmin)
+		#m.pcolormesh(x1, y1, data1, cmap=cm, vmax=vmax, vmin=vmin)
 		#m.pcolormesh(x1, y1, data1, cmap=plt.cm.jet)
 		m.colorbar(location='bottom')
 
@@ -80,6 +100,7 @@ def plot_map_multi(data_wind, data_non_wind, **kwargs):
 	m = Basemap(lon_0=180, boundinglat=50, resolution='i', projection='npstere')
 	fig = plt.figure(figsize=(6.5, 6.5))
 	m.drawcoastlines(color = '0.15')
+	m.fillcontinents(color='#555555')
 
 	x, y = m(lon, lat)
 	x1 = np.reshape(x, (145,145), order='F')

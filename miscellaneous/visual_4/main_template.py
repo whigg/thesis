@@ -125,12 +125,12 @@ for i, start in enumerate(start_list):
 		)
 
 	data_array = np.array(data)
-	data_array = np.ma.masked_invalid(data_array)
-	data_count_nan = np.sum(data_array.recordmask, axis=0)
+	data_array_1 = np.ma.masked_invalid(data_array)
+	data_count_nan = np.sum(data_array_1.recordmask, axis=0)
 	#print(data_count_nan)
 	#print(len(date_ax))
 	#print(len(date_ax_str))
-	data_ave = np.sum(data_array, axis=0) / (len(date_ax))
+	data_ave = np.sum(data_array, axis=0) / (len(date_ax)-data_count_nan)
 	#A_by_dayなので0列目
 	data_ave = pd.DataFrame(data_ave[:, 0])
 	#print(data_ave)
@@ -199,7 +199,7 @@ for i, start in enumerate(start_list):
 	data_array = np.array(data_ic0_30)/100
 	data_array_1 = np.ma.masked_invalid(data_array)
 	data_count_nan = np.sum(data_array_1.recordmask, axis=0)
-	data_ave = np.sum(data_array, axis=0) / (len(date_ax))
+	data_ave = np.sum(data_array, axis=0) / (len(date_ax)-data_count_nan)
 	data_ave = pd.DataFrame(data_ave)
 	data_ave.columns = ["ic0_30"]
 
@@ -264,7 +264,7 @@ for i, start in enumerate(start_list):
 	data_array = np.array(data_w_u)
 	data_array_1 = np.ma.masked_invalid(data_array)
 	data_count_nan = np.sum(data_array_1.recordmask, axis=0)
-	data_ave = np.sum(data_array, axis=0) / (len(date_ax))
+	data_ave = np.sum(data_array, axis=0) / (len(date_ax)-data_count_nan)
 	data_ave = data_ave[:,1]
 	data_ave = pd.DataFrame(data_ave)
 	data_ave.columns = ["w_u_30"]
