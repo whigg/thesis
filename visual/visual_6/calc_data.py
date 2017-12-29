@@ -64,7 +64,7 @@ def get_1day_sit_data(sit_file_name):
 	sit = np.array(sit_data, dtype='float32').ravel()
 
 	#sit[sit>=10001] = np.nan
-	
+
 	sit_145 = sit[grid145]
 	return pd.DataFrame({"sit_145": sit_145})
 
@@ -84,6 +84,10 @@ def get_1month_coeff_data(coeff_file_name):
 	df_coeffs = df_coeffs.drop("index", axis=1)
 	df_coeffs[df_coeffs==999.] = np.nan
 	return df_coeffs
+
+def get_1month_hermert_data(hermert_file_name):
+	df_hermert = pd.read_csv(hermert_file_name)
+	return df_hermert
 
 def cvt_date(dt):
 	# "2013-01-01" -> "20130101"

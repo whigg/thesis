@@ -114,6 +114,7 @@ def plot_map_multi(data_wind, data_non_wind, **kwargs):
 	save_name = kwargs["save_name"]
 	vmax = kwargs["vmax"]
 	vmin = kwargs["vmin"]
+	cmap = kwargs["cmap"]
 
 	m = Basemap(lon_0=180, boundinglat=50, resolution='i', projection='npstere')
 	fig = plt.figure(figsize=(6.5, 6.5))
@@ -123,6 +124,13 @@ def plot_map_multi(data_wind, data_non_wind, **kwargs):
 	x, y = m(lon, lat)
 	x1 = np.reshape(x, (145,145), order='F')
 	y1 = np.reshape(y, (145,145), order='F')
+	dx1 = (x1[1,0]-x1[0,0])/2
+	dy1 = (y1[0,1]-y1[0,0])/2
+
+	x2 = np.linspace(x1[0,0], x1[144,0], 145)
+	y2 = np.linspace(y1[0,0], y1[0,144], 145)
+	xx, yy = np.meshgrid(x2, y2)
+	xx, yy = xx.T, yy.T
 
 	data_wind = np.array(data_wind)
 	vector_u = np.ma.masked_invalid(data_wind[:, 0])
@@ -133,13 +141,27 @@ def plot_map_multi(data_wind, data_non_wind, **kwargs):
 	data_non_wind = np.ma.masked_invalid(data_non_wind)
 	data1 = np.reshape(data_non_wind, (145,145), order='F')
 
-	#m.pcolormesh(x1, y1, data1, cmap=plt.cm.jet, vmax=vmax, vmin=vmin)
-	m.pcolormesh(x1, y1, data1, cmap=cm, vmax=vmax, vmin=vmin)
+	xx = np.hstack([xx, xx[:,0].reshape(145,1)])
+	xx_ex = np.vstack([xx, (xx[144,:] + (xx[1,0]-xx[0,0]))])
+	yy = np.vstack([yy, yy[0,:]])
+	yy_ex = np.hstack([(yy[:,0].reshape(146,1) + (yy[0,0]-yy[0,1])), yy])
 
+	if cmap == "jet":
+		#m.pcolormesh(x1, y1, data1, cmap=plt.cm.jet, vmax=vmax, vmin=vmin)
+		m.pcolormesh(xx_ex-dx1, yy_ex+dy1, data1, cmap=plt.cm.jet, vmax=vmax, vmin=vmin)
+	else:
+		#m.pcolormesh(x1, y1, data1, cmap=plt.cm.jet, vmax=vmax, vmin=vmin)
+		m.pcolormesh(xx_ex-dx1, yy_ex+dy1, data1, cmap=cmap, vmax=vmax, vmin=vmin)
+	m.colorbar(location='bottom')
 	m.quiver(x, y, vector_u, vector_v)
 	#m.quiver(x, y, vector_u, vector_v, vector_speed)
 	#m.quiver(x, y, vector_u, vector_v, vector_speed, angles='xy', scale_units='xy')
-	m.colorbar(location='bottom')
+	
+	if show == True:
+		plt.show()
+	if save_name is not None:
+		plt.savefig(save_name, dpi=900)
+	plt.close()
 
 
 #900x900グリッドのデータの描画
@@ -195,7 +217,7 @@ def visual_non_line(data, mode, save_name, show):
 	if show == True:
 		plt.show()
 	if save_name is not None:
-		plt.savefig(save_name, dpi=1200)
+		plt.savefig(save_name, dpi=900)
 	plt.close()
 
 #############################################################################################
