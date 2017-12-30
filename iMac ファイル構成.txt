@@ -1,0 +1,263 @@
+iMac ファイル構成
+
+
+[凡例]
+a アクティブなコード・作成中
+b 完成されたコード，少しの修正で応用できそうなコード
+c 基本的には使わないが，データ生成の時に1回だけ使う
+d 
+	d0 もう使わない・実験用のコード
+	d1 基本的なコードだが，すでにそれをベースにしたより進んだコードがある
+e 使うか微妙，保留（要検討），実験用の単体のデータ，ほか
+f データセット
+
+
+Desktop/
+	before_1225
+		├── getA
+		│   ├── 30
+		│   ├── 90
+		│   └── A_by_year
+		└── result
+		    ├── A
+		    ├── angle
+		    ├── mean_vector
+		    └── scatter
+	wind_final
+		├── dat_to_csv　地衡風のads60データをcsvに変換する場所
+		│		├── input_binary
+		│		├── output_csv
+		│		└── wind_csv.py　地衡風のads60データをcsvに変換するコード
+		├── slp*.dat　gribデータをwgribコマンドでdatファイルにしたもの．
+		├── wind1_10.f　地衡風データの取り出し datからads60にするコード(並列処理用)
+		├── wind11_20.f　同上
+		├── wind21_30.f　同上
+		├── wind31_40.f　同上
+		├── wind41_50.f　同上
+		├── wind51_60.f　同上
+		├── wind61_70.f　同上
+		├── wind71_80.f　同上
+		└── wind81_95.f　同上
+!		│	    ├── extra_era
+!		│	 	│   └── slp_dat　gribデータをwgribコマンドでdatファイルにしたもの．
+!		│	 	│		これをwind.fなどでadsファイルにする　2003-2017		
+	IC0
+	wind_data
+	ice_wind_data
+	2mt_10u_10v
+	thesis
+		├── basic_codes
+		│   ├── calcSSCads.f　風力係数と相関係数の計算．オリジナル
+		│   ├── count_sum_origin.f　夏季海氷の氷の日数のカウント？
+		│   ├── eint_daily_ads60km.f　地衡風(gribデータ)の読み込み　ads60ファイルを生成
+		│   ├── latlon_amsr_ads145.txt　
+		│   ├── latlon_low_NP　ic0のデータの緯度経度情報
+		│   ├── ref　pdfなどが入ったフォルダ
+		│   ├── sample.jpg　可視化の出力例
+		│   ├── yosoku_final_sumopen_origin.f　？
+		│   └── yosoku_notrend_sumopen_origin.f　？
+		├── data
+		│   ├── binary_A_30　バイナリの風力係数データ(dat，ads60から計算)
+		│   ├── binary_A_by_year　月ごとのAの年変化データ
+		│   ├── binary_ic0
+		│   ├── binary_iw
+		│   ├── binary_sit
+		│   ├── binary_w
+		│   ├── csv_A_30　風力係数データ(csv，binaryから書き出し)
+		│   ├── csv_A_by_year
+		│   ├── csv_ic0
+		│   ├── csv_iw
+		│   ├── csv_sit
+		│   ├── csv_w
+!		│   ├── generate_csv_with_python　binaryの各種データをcsvに書き出すpyファイルが入ったフォルダ
+		│   ├── grid900to145.csv IC0の900x900データを145x145のグリッドの部分だけ選択するインデックスのcsv
+		│   ├── latlon.csv　145x145グリッドの緯度経度情報　csvファイル
+		│   ├── latlon_amsr_ads145.txt　145x145グリッドの緯度経度情報　テキストファイル
+		│   ├── latlon_ex.csv　145x145グリッドの緯度経度情報に海域のラベルを付与したもの
+		│   ├── latlon_info.csv
+		│   ├── missing_csv_list　各種データで欠損している日のリスト
+		│   ├── netcdf4　10m風と気温のデータ(使わない?gribで新たに取って来る?)
+		│   ├── ocean_grid_145.csv　145x145グリッドのうち，海のものを0にしたもの
+!		│   ├── other
+		│   └── readme_AMSR2.txt　AMSR2データの概要
+		├── exp
+		│	├── data_fetch
+		│	│   ├── ice_density_csv.py　IC0データを999をnanにしてcsv出力する試験コード
+		│	│   ├── latlon_low_NP　900x900グリッドのバイナリ緯度経度情報
+		│	│   └── read_ic0_latlon_data.py　900x900のic0データを可視化する試験コード
+		│	├── others　古いコード
+		│	│   ├── function_all.py　風の読み込みとかマップの可視化とかの関数群．
+		│	│	│	他のファイルにインポートする用のテンプレの予定だった．
+		│	│   └── polar.py　basemapのポーラーステレオ投影を触って見たコード．一番初期のもの．
+		│	├── visual
+		│	│   ├── data　実験用の簡易データ集
+		│	│   ├── get_ocean_grid.py　145x145のグリッドのうち，陸を除いたインデックスをcsvに書き出している
+		│	│   ├── visual_both
+		│	│   │   └── visual_both.py　地衡風と氷の風の風力係数，角度差を可視化，hexbinやcontourも入っている
+		│	│   ├── visual_by_time
+		│	│   │   ├── gen_ts_data.py　地衡風と風の速度データを年ごとに時系列として保存したcsvファイルを
+		│	│	│	│		作成・保存するコード，一つのファイルは日付x21025の行列
+		│	│   │   └── visual_by_time.py　とりあえず地衡風，風の速度，風力係数などの時系列的な可視化を目指すコード
+		│	│   ├── visual_ice_density
+		│	│   │   ├── get_ic0_with_nan.py　datファイルのIC0を欠損値をnanにして，
+		│	│	│	│	プロットしやすいような順番にしたcsvに書き出すコード
+		│	│   │   ├── grid900to145.csv　
+		│	│   │   ├── grid_adjusting.py　900x900グリッドを145x145に合わせるコード
+		│	│   │   ├── ic0_exp.csv　visual_ic0_from_csv.py用の実験用csvファイル．
+		│	│	│	│				コード内でもコメントアウトになっていて，もう使わない
+		│	│   │   ├── pcolormesh_prac.py　pcolormeshの練習．描画順番や配列の渡し方など
+		│	│   │   ├── visual_ic0.py　IC0データをポインタを使ったメッシュで可視化，描画順番は考慮していない
+		│	│   │   ├── visual_ic0_from_csv.py　IC0_csvに入っているcsvを読み込みIC0を描画するコード
+		│	│   │   ├── visual_ic0_grid.py　900x900グリッドのマッピング順番を試そうとしたコード
+		│	│   │   └── visual_ic0_nomesh.py　ic0_exp.csvを作成したコード．ポインタなしで描画した最初のコード
+		│	│   ├── visual_ice_v
+		│	│   │   ├── visual_ice_w.py　氷の速度データの可視化
+		│	│   │   └── viv1.py　visual_ice_w.pyとほとんど同じ．
+		│	│	│				風にルートつけるかと，描画ウィンドウのサイズの違いのみ
+		│	│   ├── visual_pressure
+		│	│   │   ├── fcover.dat　quiver_demo.py用のデータファイル
+		│	│   │   ├── quiver_demo.py　風の可視化，気圧の可視化のサンプルコード
+		│	│   │   └── visual_pressure.py　気圧の可視化を試みる
+		│	│   └── visual_wind
+		│	│       ├── failure
+		│	│       │   └── wind_visual.py　失敗したコード
+		│	│       └── visual_wind.py　地衡風データの可視化
+		│	├── visual_1
+		│	│   ├── 20130301_all.csv　風速・風力係数などが全部入ったデータ．csvに書き出す必要がないので使わない
+		│	│   ├── arange_dat.py　datファイルのデータ列がくっついている問題を解消するためのコード
+		│	│   ├── calc_data.py
+		│	│   ├── divide_region.py　北極海をいくつかの海域に分けるコード
+		│	│   ├── fin
+		│	│   │   ├── arange_dat.py　visual_1直下のものと同じ
+		│	│   │   ├── calc_data.py
+		│	│   │   ├── divide_region.py
+		│	│   │   ├── fin1
+		│	│   │   │   ├── load_data.py
+		│	│   │   │   ├── main_v.py
+		│	│   │   │   └── visualize.py
+		│	│   │   ├── load_data.py
+		│	│   │   ├── main.py
+		│	│   │   ├── visual_all
+		│	│   │   │   ├── 2003_30.png　おそらくexp_read_dat.pyで出力した画像
+		│	│   │   │   ├── 2004_30.png　同上
+		│	│   │   │   ├── 2005_30.png　同上
+		│	│   │   │   ├── 2006_30.png　同上
+		│	│   │   │   ├── 2007_30.png　同上
+		│	│   │   │   ├── 2008_30.png　同上
+		│	│   │   │   ├── 2009_30.png　同上
+		│	│   │   │   ├── 2010_30.png　同上
+		│	│   │   │   ├── 2011_30.png　同上
+		│	│   │   │   ├── arange_dat.py　visual_1直下のものと同じ
+		│	│   │   │   ├── divide_region.py　visual_1直下のdivide_region.pyの前身
+		│	│   │   │   ├── exp_read_dat.py　相関係数のcsvを読んで可視化をしてみる実験コード
+		│	│   │   │   ├── grid_adjusting.py
+		│	│   │   │   ├── ice_080621_exp.csv
+		│	│   │   │   ├── method_date.py
+		│	│   │   │   ├── method_map.py
+		│	│   │   │   ├── method_sns_graph.py
+		│	│   │   │   └── visual_all.py
+		│	│   │   └── visualize.py
+		│	│   ├── latlon_ex.csv　145x145の緯度経度情報に海域の名前と数字ラベルをつけたもの
+		│	│   ├── main_v.py
+		│	│   └── visualize.py
+		│	├── visual_2
+		│	│   ├── arange_dat.py
+		│	│   ├── basic_file.py
+		│	│   ├── calc_data.py
+		│	│   ├── divide_region.py
+		│	│   ├── main_v.py
+		│	│   └── visualize.py
+		│	├── visual_3
+		│	│   ├── basic_file.py
+		│	│   ├── calc_data.py
+		│	│   ├── exp_get_netcdf4.py
+		│	│   ├── exp_t2m_1.py
+		│	│   ├── main_v.py
+		│	│   ├── visual_t2m.py
+		│	│   └── visualize.py
+		│	├── visual_3_home
+		│	│   ├── basic_file.py
+		│	│   ├── calc_data.py
+		│	│   ├── exp_get_netcdf4.py
+		│	│   ├── main_template.py
+		│	│   ├── main_v.py
+		│	│   └── visualize.py
+		│	├── visual_4
+		│	│ 	├── basic_file.py
+		│	│ 	├── calc_data.py
+		│	│	├── exp_date.py
+		│	│ 	├── exp_get_netcdf4.py
+		│	│ 	├── main_template.py
+		│	│ 	├── main_v.py
+		│	│ 	├── test_w_u.csv
+		│	│ 	└── visualize.py
+		│	└── visual_5
+		│	    ├── basic_file.py
+		│	    ├── calc_data.py
+		│	    ├── main_modules.py
+		│	    ├── main_v.py
+		│	    ├── test_file
+		│	    └── visualize.py
+		├── getA
+		│   ├── A_30　風力係数の30日平均フォルダ　データはA_csvにコピー済み
+		│   ├── A_90　風力係数の90日平均フォルダ　未完成
+		│   ├── A_by_year　風力係数の月ごとの年変化データ　これもA_by_yearにコピー済み
+		│   ├── calcSSCads.f　A_by_yearを求めるのに使った風力係数の計算コード
+		│   ├── coeff.f　30フォルダ，90フォルダを作るのに使うコード
+		│   ├── dri2003　流氷速度データ　拡張子をすべてamsr36iにしたもの
+		│   ├── dri2004　同上
+		│   ├── dri2005　同上
+		│   ├── dri2006　同上
+		│   ├── dri2007　同上
+		│   ├── dri2008　同上
+		│   ├── dri2009　同上
+		│   ├── dri2010　同上
+		│   ├── dri2011　同上
+		│   ├── dri2012　同上
+		│   ├── dri2013　同上
+		│   ├── dri2014　同上
+		│   ├── dri2015　同上
+		│   ├── dri2016　同上
+		│   ├── dri2017　同上
+		│   ├── erainterim-1403_60　地衡風データ　拡張子はads60
+		│   └── slp_dat_使わない
+		│		│── slp*.dat　adsへ出力させるための入力データ　2003-2017
+		│		│── wfname.py　ディレクトリ内のdatファイルの名前を取得するコード 
+		│		│── wind.f　地衡風データの取り出し datからads60にするコード
+		│		└── wind*.f　地衡風データの取り出し datからads60にするコード（上と同じ・並列処理用）
+		├── reslt　可視化結果の保存用フォルダ
+!s		│	├── A　風力係数関連
+		│	│   ├── A_30　30日のデータからの風力係数
+		│	│   ├── A_by_day_30　1日ごとの風力係数の30日平均
+		│	│   └── A_by_year　月ごとの風力係数の年変化
+		│	├── angle　偏角関連
+		│	│   ├── angle_30　30日のデータからの偏角（補正済みだが間違っている可能性大なので使わない）
+		│	│   ├── angle_30_ignore_low_coeff　30日のデータからの偏角　相関係数の絶対値が0.4未満のものを外して描画
+		│	│   ├── angle_30_modified　30日のデータからの偏角　角度補正あり
+		│	│   └── angle_30_original　30日のデータからの偏角　そのままの描画（補正なし）
+		│	├── mean_vector　風や海流など流れの平均場の可視化関連
+		│	│   ├── mean_ocean_currents　月ごとの海流の可視化
+		│	│   ├── mean_ocean_currents_arrow_black　月ごとの海流の可視化　矢印の色が黒
+		│	│   └── mean_wind　月ごとの地衡風の可視化
+		│	└── scatter
+		│	    ├── scatter_A_30_and_ic0_ignore_low_coeff_north_polar　Aとic0の相関が低いものを除去した散布図(北極海のみ)
+!e		│	    └── scatter_A_30_and_ic0_north_polar　Aとic0のすべての点の散布図(北極海のみ)
+		├── search
+		│   ├── IC0　AMSREのdatファイルを入れるフォルダ(入力)
+		│   ├── IC0_extend_csv　AMSRE用のcsv出力用フォルダ
+		│   ├── get_ic0_with_nan.py　IC0のdatからcsvとして保存するコード
+		│   ├── search_missing_csv.py　各種データの欠損日を調べるコード
+		│   └── search_netcdf4_missing.py　netcdf形式で取得したデータの欠損を調べるコード
+		└── visual_6
+!s		    ├── calc_data.py
+		    ├── main_v.py
+		    ├── patch_1.py
+		    ├── test_ic0_amsre.py
+		    ├── test_w_u.csv
+!e		    └── visualize.py
+
+
+
+
+
+
