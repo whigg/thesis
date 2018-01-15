@@ -53,6 +53,23 @@ cm_angle_2 = visualize.generate_cmap([
 
 ###############################################################################################################
 
+def get_date_ax(start, end):
+	start_date = [start//10000, (start%10000)//100, (start%10000)%100]
+	end_date = [end//10000, (end%10000)//100, (end%10000)%100]
+	d1 = date(start_date[0], start_date[1], start_date[2])
+	d2 = date(end_date[0], end_date[1], end_date[2])
+	L = (d2-d1).days+1
+	dt = d1
+
+	date_ax = []
+	date_ax_str = []
+	for i in range(L):
+		date_ax.append(dt)
+		date_ax_str.append(calc_data.cvt_date(dt))
+		dt = dt + timedelta(days=1)
+
+	return date_ax, date_ax_str
+
 def main_data(start, end, **kwargs):
 	span = kwargs["span"]
 	region = kwargs["region"]
@@ -172,11 +189,12 @@ def test_w_iw_by_year():
 
 	for month in month_list:
 		print("************" + month + "************")
-		helmert_30_30_fname = "../data/csv_Helmert_30/Helmert_30_2003" + month + ".csv"
+		helmert_30_30_fname = "../data/csv_Helmert_both_30/Helmert_both_30_2003" + month + ".csv"
 		data_30 = pd.read_csv(helmert_30_30_fname)
 		#area_16_index = np.array(data_30.loc[data_30.area_label==16, :].index)
-		area_16_index = np.array(data_30[(data_30.area_label.isin(list(range(17))))].dropna().index)
+		area_16_index = np.array(data_30[(data_30.area_label.isin(list(range(17))))].dropna().index).tolist()
 		plot_grids = random.sample(area_16_index, 15)
+		print(plot_grids)
 
 		gw_list = []
 		iw_list = []
@@ -190,36 +208,39 @@ def test_w_iw_by_year():
 			gw_data = calc_data.get_1day_w_data(gw_file_name)
 			iw_data = calc_data.get_1day_iw_data(iw_file_name)
 
-			gw_speed = np.array(gw_data["w_speed"])
-			iw_speed = np.array(iw_data["iw_speed"])
-			iw_ocean_u = np.array(iw_data["iw_u"] - helmert_data["ocean_u"])
-			iw_ocean_v = np.array(iw_data["iw_v"] - helmert_data["ocean_v"])
+			gw_speed = np.array(gw_data.loc[plot_grids, "w_speed"])
+			iw_speed = np.array(iw_data.loc[plot_grids, "iw_speed"])
+			iw_ocean_u = np.array(iw_data.loc[plot_grids, "iw_u"] - helmert_data.loc[plot_grids, "ocean_u"])
+			iw_ocean_v = np.array(iw_data.loc[plot_grids, "iw_v"] - helmert_data.loc[plot_grids, "ocean_v"])
 			iw_speed_ocean = np.sqrt(iw_ocean_u**2 + iw_ocean_v**2)
 
-			gw_list.append(gw_speed[plot_grids])
-			iw_list.append(iw_speed[plot_grids])
-			iw_ocean_list.append(iw_speed_ocean[plot_grids])
+			gw_list.append(gw_speed)
+			iw_list.append(iw_speed)
+			iw_ocean_list.append(iw_speed_ocean)
 
 		gw_array = np.array(gw_list)
 		iw_array = np.array(iw_list)
 		iw_ocean_array = np.array(iw_ocean_list)
 
-		for grid in plot_grids:
-			gw = gw_array[:, grid]
-			iw = iw_array[:, grid]
-			iw_ocean = iw_ocean_array[:, grid]
-			save_name_1 = dirs_1 + month + "15_grid" + str(grid) + ".png"
-			save_name_2 = dirs_2 + month + "15_grid" + str(grid) + ".png"
-			sns.set_style("darkgrid")
-			sns.jointplot(x=gw, y=iw, kind="reg")
-			plt.savefig(save_name_1)
-			plt.close()
-			sns.set_style("darkgrid")
-			sns.jointplot(x=gw, y=iw_ocean, kind="reg")
-			plt.savefig(save_name_2)
-			plt.close()
+		for i in range(len(plot_grids)):
+			gw = gw_array[:, i]
+			iw = iw_array[:, i]
+			iw_ocean = iw_ocean_array[:, i]
+			save_name_1 = dirs_1 + month + "15_grid_" + str(plot_grids[i]) + ".png"
+			save_name_2 = dirs_2 + month + "15_grid_" + str(plot_grids[i]) + ".png"
+			try:
+				sns.set_style("darkgrid")
+				sns.jointplot(x=gw, y=iw, kind="reg")
+				plt.savefig(save_name_1)
+				plt.close()
+				sns.set_style("darkgrid")
+				sns.jointplot(x=gw, y=iw_ocean, kind="reg")
+				plt.savefig(save_name_2)
+				plt.close()
+			except:
+				continue
 
-
+#test_w_iw_by_year()
 
 
 #30_30, 90_90でどれだけ海流が取れているかのマップ．別々に出力．colorbarあり
@@ -278,7 +299,7 @@ def ocean_30_vs_90_with_colorbar():
 			plt.savefig(save_name, dpi=450)
 			plt.close()
 
-
+#ocean_30_vs_90_with_colorbar()
 
 
 
@@ -298,15 +319,23 @@ def map_corr_slide_month(slide):
 		data_dict[month] = {}
 		for year in y_list:
 			data_dict[month][year] = {}
+			data_dict[month][year]["ym_A"] = np.array([np.nan]*(145**2))
+			data_dict[month][year]["ym_ic0"] = np.array([np.nan]*(145**2))
+			data_dict[month][year]["data_A"] = np.array([np.nan]*(145**2))
+			data_dict[month][year]["data_ic0"] = np.array([np.nan]*(145**2))
 
 	for k, item in enumerate(product_ym):
-		if k+slide > len(product_ym):
+		if k+slide > len(product_ym)-1:
 			break
 		x_ym = product_ym[k][0] + product_ym[k][1]
 		y_ym = product_ym[k+slide][0] + product_ym[k+slide][1]
 		print(x_ym, y_ym)
-		if (k<=96) & (k+slide>96):
+		if (k<=95) & (k+slide>95):
 			print("\tcontinue: {}".format((x_ym, y_ym)))
+			data_dict[product_ym[k][1]][product_ym[k][0]]["ym_A"] = x_ym
+			data_dict[product_ym[k][1]][product_ym[k][0]]["ym_ic0"] = y_ym
+			data_dict[product_ym[k][1]][product_ym[k][0]]["data_A"] = np.array([np.nan]*(145**2))
+			data_dict[product_ym[k][1]][product_ym[k][0]]["data_ic0"] = np.array([np.nan]*(145**2))
 			continue
 		else:
 			helmert_axis_x_file = "../data/csv_Helmert_both_30/Helmert_both_30_20" + x_ym + ".csv"
@@ -324,6 +353,7 @@ def map_corr_slide_month(slide):
 		accumulate_data_A = []
 		accumulate_data_ic0 = []
 		for year in y_list:
+			#print(month, year)
 			accumulate_data_A.append(data_dict[month][year]["data_A"])
 			accumulate_data_ic0.append(data_dict[month][year]["data_ic0"])
 		accumulate_data_A = np.array(accumulate_data_A)
@@ -333,7 +363,7 @@ def map_corr_slide_month(slide):
 		for i in range(145**2):
 			plot_data_A = accumulate_data_A[:, i]
 			#data_A = data_A[~np.isnan(data_A)]
-			plot_data_ic0 = accumulate_data[:, i]
+			plot_data_ic0 = accumulate_data_ic0[:, i]
 			tmp_df = pd.DataFrame({"data_A": plot_data_A, "data_ic0": plot_data_ic0})
 			if len(tmp_df.dropna()) <= 5:
 				corr = np.nan
@@ -343,13 +373,15 @@ def map_corr_slide_month(slide):
 			corr_list.append(corr)
 		corr_array = np.array(corr_list)
 
-		save_name = dirs + "A_ic0_start_month_" + month + "_slide_" + str(slide) + ".png"
-		print(save_name)
+		save_name = dirs + "ic0_A_start_month_" + month + "_slide_" + str(slide) + ".png"
+		print("\t{}".format(save_name))
 		visualize.plot_map_once(corr_array, data_type="type_non_wind", show=False, 
 			save_name=save_name, vmax=1, vmin=-1, cmap=plt.cm.jet)
 
-
-
+"""
+for i in range(1,6):
+	map_corr_slide_month(slide=i)
+"""
 
 
 
@@ -462,32 +494,38 @@ def corr_by_ic0_norm():
 		print("******************  {}/{}  *******************".format(i+1, M))
 		helmert_file_name = "../data/csv_Helmert_both_30/Helmert_both_30_" + str(start)[:6] + ".csv"
 		data = pd.read_csv(helmert_file_name)
-		data_1 = data.loc[:, ["ic0", "A"]].dropna()
-		data_2 = data.loc[data.R2>=0.36, ["ic0", "A"]].dropna()
-		data_3 = data.loc[data.ic0<100, ["ic0", "A"]].dropna()
+		data_1 = data.loc[:, ["ic0_30", "A", "area_label"]].dropna()
+		data_2 = data.loc[data.R2>=0.36, ["ic0_30", "A", "area_label"]].dropna()
+		data_3 = data.loc[data.ic0_30<100, ["ic0_30", "A", "area_label"]].dropna()
 		for j in range(17):
-			data_1_area = data_1.loc[data1.area_label==j, :].dropna()
-			data_2_area = data_2.loc[data2.area_label==j, :].dropna()
-			data_3_area = data_3.loc[data3.area_label==j, :].dropna()
-			save_name_1 = dirs_1 + "area_" + str(j) + str(start)[:6] + ".png"
-			save_name_2 = dirs_2 + "area_" + str(j) + str(start)[:6] + ".png"
-			save_name_3 = dirs_3 + "area_" + str(j) + str(start)[:6] + ".png"
+			data_1_area = data_1.loc[data_1.area_label==j, :].dropna()
+			data_2_area = data_2.loc[data_2.area_label==j, :].dropna()
+			data_3_area = data_3.loc[data_3.area_label==j, :].dropna()
+			save_name_1 = dirs_1 + "area_" + str(j) + "_" + str(start)[:6] + ".png"
+			save_name_2 = dirs_2 + "area_" + str(j) + "_" + str(start)[:6] + ".png"
+			save_name_3 = dirs_3 + "area_" + str(j) + "_" + str(start)[:6] + ".png"
 
 			data_list = [data_1_area, data_2_area, data_3_area]
 			save_list = [save_name_1, save_name_2, save_name_3]
 			for k in range(3):
 				print(save_list[k])
+				x = data_list[k]["ic0_30"]
+				#print(x.mean(0))
+				#print(x.sub(x.mean(0)))
+				xd = x.sub(x.mean(0)).div(x.std(0))
+				y = data_list[k]["A"]
+				yd = y.sub(y.mean(0)).div(y.std(0))
 				try:
-					x = data_list[k]["ic0"]
-					xd = x.sub(x.mean(0), axis=1).div(x.std(0), axis=1)
-					y = data_list[k]["A"]
-					yd = y.sub(y.mean(0), axis=1).div(y.std(0), axis=1)
 					sns.set_style("darkgrid")
 					sns.jointplot(x=xd, y=yd, kind="reg")
 					plt.savefig(save_list[k])
+					plt.close()
 				except:
+					print("plot passed...")
 					continue
+				
 
+#corr_by_ic0_norm()
 
 
 
@@ -502,6 +540,7 @@ def ts_30_by_year():
 
 	corr_all = []
 	for month in month_list:
+		print("*************** " + month + " ***************")
 		data_A_year, data_theta_year, data_R2_year, data_e2_year = [], [], [], []
 		for year in y_list:
 			file_list = "../data/csv_Helmert_both_30/Helmert_both_30_20" + year + month + ".csv"
@@ -515,12 +554,16 @@ def ts_30_by_year():
 				data.loc[:, (item, "2sigma_pos")] = data.loc[:, (item, "mean")] + 2*data.loc[:, (item, "std")]
 				data.loc[:, (item, "2sigma_neg")] = data.loc[:, (item, "mean")] - 2*data.loc[:, (item, "std")]
 
-			data_A = data.loc[:, ("A", ["mean", "1sigma_pos", "1sigma_neg", "2sigma_pos", "2sigma_neg", "count"])].values
+			data_A = data.loc[:, ("A", ["mean", "1sigma_pos", "1sigma_neg", "count"])].values
+			data_theta = data.loc[:, ("theta", ["mean", "1sigma_pos", "1sigma_neg", "count"])].values
+			data_R2 = data.loc[:, ("R2", ["mean", "1sigma_pos", "1sigma_neg", "count"])].values
+			data_e2 = data.loc[:, ("epsilon2", ["mean", "1sigma_pos", "1sigma_neg", "count"])].values
+			"""
 			if year == "03":
-				print(data.loc[:, ("A", ["mean", "1sigma_pos", "1sigma_neg"])])
-			data_theta = data.loc[:, ("theta", ["mean", "1sigma_pos", "1sigma_neg", "2sigma_pos", "2sigma_neg", "count"])].values
-			data_R2 = data.loc[:, ("R2", ["mean", "1sigma_pos", "1sigma_neg", "2sigma_pos", "2sigma_neg", "count"])].values
-			data_e2 = data.loc[:, ("epsilon2", ["mean", "1sigma_pos", "1sigma_neg", "2sigma_pos", "2sigma_neg", "count"])].values
+				tmp = data.loc[:, ("A", ["mean", "1sigma_pos", "1sigma_neg", "count"])].dropna()
+				print(tmp.head())
+				print(np.array(tmp)[:3,:])
+			"""
 			data_A_year.append(data_A)
 			data_theta_year.append(data_theta)
 			data_R2_year.append(data_R2)
@@ -531,80 +574,92 @@ def ts_30_by_year():
 		data_R2_year = np.array(data_R2_year)
 		data_e2_year = np.array(data_e2_year)
 
-		dates1 = pd.date_range("2003", "2011", freq='MS')[:-1]
-		dates2 = pd.date_range("2013", "2017", freq='MS')[:-1]
+		dates1 = pd.date_range("2003", "2011", freq='YS')[:-1]
+		dates2 = pd.date_range("2013", "2017", freq='YS')[:-1]
+		#print(dates1)
 		N_dates1 = len(dates1)
 
-		print(data_A_year[0,:,:])
-		for i in range(18):
-			plt.figure(figsize=(9, 6))
+		#print(data_A_year[0,np.array(tmp.index),:])
+		for i in range(19):
+			print("\tarea: {}".format(i))
+			plt.figure(figsize=(6, 4))
 			gs = gridspec.GridSpec(3,2)
+			#gs.tight_layout(plt.figure(figsize=(6, 4)))
 
 			plt.subplot(gs[0, 0])
-			plt.plot(dates1, data_A_year[:N_dates1,i,0], '-', color="k")
-			plt.plot(dates2, data_A_year[N_dates1:,i,0], '-', color="k")
-			plt.fill_between(dates1, data_A_year[:N_dates1,i,1], data_A_year[:N_dates1,i,2],
+			plt.plot(dates1, data_A_year[:N_dates1,i,1], '-', color="k")
+			plt.plot(dates2, data_A_year[N_dates1:,i,1], '-', color="k")
+			plt.fill_between(dates1, data_A_year[:N_dates1,i,2], data_A_year[:N_dates1,i,3],
 				facecolor='green', alpha=0.3)
-			plt.fill_between(dates2, data_A_year[N_dates1:,i,1], data_A_year[N_dates1:,i,2],
+			plt.fill_between(dates2, data_A_year[N_dates1:,i,2], data_A_year[N_dates1:,i,3],
 				facecolor='green', alpha=0.3)
 			plt.ylim([0, 0.025])
 			plt.ylabel('A')
-			plt.lot(gs[0, 0]).get_xaxis().set_major_formatter(mdates.DateFormatter('%y'))
+			plt.subplot(gs[0, 0]).get_xaxis().set_major_formatter(mdates.DateFormatter('%y'))
 
 			plt.subplot(gs[1, 0])
-			plt.plot(dates1, data_theta_year[:N_dates1,i,0], '-', color="k")
-			plt.plot(dates2, data_theta_year[N_dates1:,i,0], '-', color="k")
-			plt.fill_between(dates1, data_theta_year[:N_dates1,i,1], data_theta_year[:N_dates1,i,2],
+			plt.plot(dates1, data_theta_year[:N_dates1,i,1], '-', color="k")
+			plt.plot(dates2, data_theta_year[N_dates1:,i,1], '-', color="k")
+			plt.fill_between(dates1, data_theta_year[:N_dates1,i,2], data_theta_year[:N_dates1,i,3],
 				facecolor='lightskyblue', alpha=0.3)
-			plt.fill_between(dates2, data_theta_year[N_dates1:,i,1], data_theta_year[N_dates1:,i,2],
+			plt.fill_between(dates2, data_theta_year[N_dates1:,i,2], data_theta_year[N_dates1:,i,3],
 				facecolor='lightskyblue', alpha=0.3)
 			plt.ylim([-60, 60])
-			plt.yticks([-60, -50, -40, -30, -20, -10, 0, 10, 20, 30, 40, 50, 60])
+			plt.yticks([-60, -40, -20, 0, 20, 40, 60])
 			plt.ylabel(r'$\theta$')
-			plt.lot(gs[1, 0]).get_xaxis().set_major_formatter(mdates.DateFormatter('%y'))
+			plt.subplot(gs[1, 0]).get_xaxis().set_major_formatter(mdates.DateFormatter('%y'))
 
 			plt.subplot(gs[0, 1])
-			plt.plot(dates1, data_R2_year[:N_dates1,i,0], '-', color="k")
-			plt.plot(dates2, data_R2_year[N_dates1:,i,0], '-', color="k")
-			plt.fill_between(dates1, data_R2_year[:N_dates1,i,1], data_R2_year[:N_dates1,i,2],
+			plt.plot(dates1, data_R2_year[:N_dates1,i,1], '-', color="k")
+			plt.plot(dates2, data_R2_year[N_dates1:,i,1], '-', color="k")
+			plt.fill_between(dates1, data_R2_year[:N_dates1,i,2], data_R2_year[:N_dates1,i,3],
 				facecolor='coral', alpha=0.3)
-			plt.fill_between(dates2, data_R2_year[N_dates1:,i,1], data_R2_year[N_dates1:,i,2],
+			plt.fill_between(dates2, data_R2_year[N_dates1:,i,2], data_R2_year[N_dates1:,i,3],
 				facecolor='coral', alpha=0.3)
 			plt.ylim([0, 1])
 			plt.yticks([0, .2, .4, .6, .8, 1])
 			plt.ylabel(r'$R^{2}$')
-			plt.lot(gs[0, 1]).get_xaxis().set_major_formatter(mdates.DateFormatter('%y'))
+			plt.subplot(gs[0, 1]).get_xaxis().set_major_formatter(mdates.DateFormatter('%y'))
 
 			plt.subplot(gs[1, 1])
-			plt.plot(dates1, data_e2_year[:N_dates1,i,0], '-', color="k")
-			plt.plot(dates2, data_e2_year[N_dates1:,i,0], '-', color="k")
-			plt.fill_between(dates1, data_e2_year[:N_dates1,i,1], data_e2_year[:N_dates1,i,2],
+			plt.plot(dates1, data_e2_year[:N_dates1,i,1], '-', color="k")
+			plt.plot(dates2, data_e2_year[N_dates1:,i,1], '-', color="k")
+			plt.fill_between(dates1, data_e2_year[:N_dates1,i,2], data_e2_year[:N_dates1,i,3],
 				facecolor='silver', alpha=0.3)
-			plt.fill_between(dates2, data_e2_year[N_dates1:,i,1], data_e2_year[N_dates1:,i,2],
+			plt.fill_between(dates2, data_e2_year[N_dates1:,i,2], data_e2_year[N_dates1:,i,3],
 				facecolor='silver', alpha=0.3)
 			plt.ylim([0, 1.5])
 			plt.yticks([0, .5, 1, 1.5])
 			plt.ylabel(r'$e^{2}$')
-			plt.lot(gs[1, 1]).get_xaxis().set_major_formatter(mdates.DateFormatter('%y'))
+			plt.subplot(gs[1, 1]).get_xaxis().set_major_formatter(mdates.DateFormatter('%y'))
 
 			plt.subplot(gs[2, :])
-			y1 = data_A_year[:N_dates1,i,5]
-			y2 = data_A_year[N_dates1:,i,5]
+			y1 = data_A_year[:N_dates1,i,0]
+			y2 = data_A_year[N_dates1:,i,0]
 			plt.plot(dates1, y1, '-', color="k")
 			plt.plot(dates2, y2, '-', color="k")
 			y_lim_min = max(y1.min()-5,0)
 			y_lim_max = y1.max()+5
 			plt.ylim([y_lim_min, y_lim_max])
-			plt.yticks(y_lim_min, y_lim_max, int(y_lim_max-y_lim_min+1))
+			#print(int(y_lim_max-y_lim_min+1))
+			#plt.yticks(y_lim_min, y_lim_max, int(y_lim_max-y_lim_min+1))
 			plt.ylabel("number of data")
 			plt.subplot(gs[2, :]).get_xaxis().set_major_formatter(mdates.DateFormatter('%y'))
 			plt.grid(True)
 
-			plt.tight_layout()
+			try:
+				plt.tight_layout()
+			except:
+				print("tight layout passed...")
 
 			save_name = dirs + "all_area_" + str(i) + "_" + month + ".png"
-			plt.savefig(save_name, dpi=400)
+			try:
+				plt.savefig(save_name, dpi=300)
+			except:
+				print("save passed...")
 			plt.close()
+
+#ts_30_by_year()
 
 
 
@@ -669,7 +724,7 @@ def get_helmert_test():
 			iw_minus_ave = iw_array - np.tile(iw_ave, (L_iw,1,1))
 
 			param_list = []
-			for i in range(145**2):
+			for j in range(145**2):
 				#print(j)
 				N_c = np.sum(~np.isnan(iw_minus_ave[:,j,0]))
 				if N_c <= 20:
@@ -701,6 +756,8 @@ def get_helmert_test():
 			print(save_name)
 			data.to_csv(save_name, index=False)
 
+#get_helmert_test()
+
 
 
 def compare_2_both_30_csv():
@@ -715,6 +772,7 @@ def compare_2_both_30_csv():
 
 	for month in month_list:
 		for year in y_list:
+			print(year + month)
 			file_mat = "../data/csv_Helmert_both_30/Helmert_both_30_20" + year + month + ".csv"
 			df_mat = pd.read_csv(file_mat)
 			file_non_mat = "../data/csv_Helmert_30_non_mat/Helmert_30_non_mat_20" + year + month + ".csv"
@@ -724,11 +782,11 @@ def compare_2_both_30_csv():
 				N_c_h = df_mat[kw].values
 				N_c_c = df_non_mat[kw].values
 				N_c_diff = N_c_h - N_c_c
-
 				save_name = dirs + kw + "_" + year + month + ".png"
 				visualize.plot_map_once(N_c_diff, data_type="type_non_wind", show=False, 
 						save_name=save_name, vmax=v_lim_list[i][1], vmin=v_lim_list[i][0], cmap=plt.cm.jet)
 
+#compare_2_both_30_csv()
 
 
 
@@ -747,10 +805,13 @@ def get_helmert_10m_both_30_csv():
 		start_0101 = date(start//10000, 1, 1)
 		start_date = date(start//10000, (start%10000)//100, (start%10000)%100)
 		start_from_0101_idx = (start_date-start_0101).days
+		print(start_0101, start_date, start_from_0101_idx)
+
 		nc_fname = "../data/netcdf4/interim_2mt_10u_10v_" + str(start)[:4] + "0101-" + str(start)[:4] + "1231.nc"
 		_, result_u10, result_v10 = calc_data.get_1month_netcdf4_data(nc_fname)
 		w10_u_array = result_u10[start_from_0101_idx:start_from_0101_idx+L, :]
 		w10_v_array = result_v10[start_from_0101_idx:start_from_0101_idx+L, :]
+		print(result_u10.shape, w10_u_array.shape)
 
 		iw_file_list = sorted(glob.glob("../data/csv_iw/" + str(start)[2:6] + "*.csv"))
 		iw_list = []
@@ -763,17 +824,20 @@ def get_helmert_10m_both_30_csv():
 			ice_wind = np.array(df_ice_wind, dtype='float32')/100
 			iw_list.append(ice_wind[:, [0,1]])
 		iw_array = np.array(iw_list)
+		print(iw_array.shape)
 
 		w10_u_ave = np.nanmean(w10_u_array, axis=0)
 		w10_v_ave = np.nanmean(w10_v_array, axis=0)
 		iw_ave = np.nanmean(iw_array, axis=0)
+		print(w10_u_ave.shape, iw_ave.shape)
 
 		w10_u_minus_ave = w10_u_array - np.tile(w10_u_ave, (L,1))
 		w10_v_minus_ave = w10_v_array - np.tile(w10_v_ave, (L,1))
 		iw_minus_ave = iw_array - np.tile(iw_ave, (L_iw,1,1))
 
 		param_list = []
-		for i in range(145**2):
+		#for j in range(1218,1220):
+		for j in range(145**2):
 			#print(j)
 			N_c = np.sum(~np.isnan(iw_minus_ave[:,j,0]))
 			if N_c <= 20:
@@ -794,11 +858,12 @@ def get_helmert_10m_both_30_csv():
 			A = np.sqrt(b_1**2 + b_2**2)
 			theta = np.arctan2(b_2, b_1) * 180/np.pi
 			#print(a_1, a_2, b_1, b_2)
-			#print("A: {}\ntheta: {}\na_1: {}\na_2: {}\nR2: {}\ne2: {}\nN_c: {}".format(A, theta, a_1, a_2, R2, R_numerator, N_c))
+			print("A: {}\ntheta: {}\na_1: {}\na_2: {}\nR2: {}\ne2: {}\nN_c: {}".format(A, theta, a_1, a_2, R2, R_numerator, N_c))
 			param_list.append([A, theta, a_1, a_2, R2, R_numerator, N_c])
 		param_array = np.array(param_list)
 		
-		data_array = np.hstack((param_array, iw_ave, w10_u_ave, w10_v_ave))
+		#print(param_array.shape, iw_ave.shape, w10_u_ave.shape, w10_v_ave.shape)
+		data_array = np.hstack((param_array, iw_ave, w10_u_ave.reshape((-1,1)), w10_v_ave.reshape((-1,1))))
 		data = pd.DataFrame(data_array)
 		data.columns = ["A", "theta", "ocean_u", "ocean_v", "R2", "epsilon2", "N_c", "mean_iw_u", "mean_iw_v", "mean_w_u", "mean_w_v"]
 		data_ex_dir = "../data/csv_Helmert_ex/Helmert_ex_" + str(start)[:-2] + ".csv"
@@ -808,13 +873,16 @@ def get_helmert_10m_both_30_csv():
 		print(save_name)
 		data.to_csv(save_name, index=False)
 
+#get_helmert_10m_both_30_csv()
+
 
 
 
 
 def get_helmert_10m_both_90_csv():
-	dirs = "../data/csv_Helmert_both_90/"
-	mkdir(dirs)
+	dirs = "../data/csv_Helmert_both_90_netcdf4/"
+	if not os.path.exists(dirs):
+		os.makedirs(dirs)
 
 	#start_list = [20030101]
 	start_list_plus_3month = start_list + [20170901, 20171001, 20171101]
@@ -863,7 +931,7 @@ def get_helmert_10m_both_90_csv():
 			start_list_3month = [start_1_1, start_2, start_3]
 			end_list_3month = [end_1, end_2, end_3]
 
-		data_w_90 = np.zeros((1, 145**2, 3))
+		data_w_90 = np.zeros((1, 145**2, 2))
 		data_iw_90 = np.zeros((1, 145**2, 3))
 		for i in range(3):
 			start = start_list_3month[i]
@@ -872,23 +940,16 @@ def get_helmert_10m_both_90_csv():
 				continue
 
 			#wデータの取得・整形
-			"""
-			_, _, _, data_w = main_data(
-				start, end, 
-				span=30, 
-				get_columns=["w"], 
-				region=None, 
-				accumulate=True
-				)
-			data_array_w = np.array(data_w)
-			#data_ave_w = np.nanmean(data_array_w, axis=0)
-			data_w_90 = np.concatenate([data_w_90, data_array_w], axis=0)
-			"""
+			#start = start_list_3month[i]
 			start_0101 = date(start//10000, 1, 1)
 			start_date = date(start//10000, (start%10000)//100, (start%10000)%100)
 			start_from_0101_idx = (start_date-start_0101).days
 
-			nc_fname = nc_file_list[i]
+			month_end = end
+			month_end = date(month_end//10000, (month_end%10000)//100, (month_end%10000)%100)
+			L = month_end.day
+
+			nc_fname = "../data/netcdf4/interim_2mt_10u_10v_" + str(start)[:4] + "0101-" + str(start)[:4] + "1231.nc"
 			_, result_u10, result_v10 = calc_data.get_1month_netcdf4_data(nc_fname)
 			w10_u_array = result_u10[start_from_0101_idx:start_from_0101_idx+L, :]
 			w10_v_array = result_v10[start_from_0101_idx:start_from_0101_idx+L, :]
@@ -898,9 +959,7 @@ def get_helmert_10m_both_90_csv():
 				tmp_2 = w10_v_array[day_idx, :].reshape((-1,1))
 				w10_uv.append(np.hstack((tmp_1, tmp_2)))
 			w10_uv = np.array(w10_uv)
-			data_w_year = np.concatenate([data_w_year, w10_uv], axis=0)
-
-
+			data_w_90 = np.concatenate([data_w_90, w10_uv], axis=0)
 
 			#iwデータの取得・整形
 			_, _, _, data_iw = main_data(
@@ -926,8 +985,8 @@ def get_helmert_10m_both_90_csv():
 			#欠損データの処理
 			not_nan_idx = np.sum(np.isnan(data_iw_90[:, j, :]), axis=1)==False
 			#print("\tnot_nan_idx: {}".format(not_nan_idx))
-			x = data_w_90[:, j, 1][not_nan_idx].reshape((-1,1))
-			y = data_w_90[:, j, 2][not_nan_idx].reshape((-1,1))
+			x = data_w_90[:, j, 0][not_nan_idx].reshape((-1,1))
+			y = data_w_90[:, j, 1][not_nan_idx].reshape((-1,1))
 			w = w_array[:, j][np.tile(not_nan_idx, 2)].reshape((-1,1))
 			iw_u_ave = np.nanmean(data_iw_90[:, j, 1])
 			iw_v_ave = np.nanmean(data_iw_90[:, j, 2])
@@ -956,24 +1015,28 @@ def get_helmert_10m_both_90_csv():
 			else:
 				Helmert.append([A, theta, gamma[0], gamma[1], R2, R_numerator, N_c, iw_u_ave, iw_v_ave])
 
-		result = np.hstack((Helmert, data_ave_w[:,[1,2]]))
+		result = np.hstack((Helmert, data_ave_w))
 		#print(result.shape)
 		data = pd.DataFrame(result)
 		data.columns = ["A_90", "theta_90", "ocean_u_90", "ocean_v_90", "R2_90", "epsilon2_90", "N_c_90", "mean_iw_u_90", "mean_iw_v_90", "mean_w_u_90", "mean_w_v_90"]
 		data["ocean_speed_90"] = np.sqrt(data["ocean_u_90"]**2 + data["ocean_v_90"]**2)
-		#print(data.head(3))
-		data = pd.concat([latlon_ex, data_ex_basic, data], axis=1)
-		save_name = dirs + "Helmert_both_90_" + str(start_1)[:6] + ".csv"
+		
+		data_ex_dir = "../data/csv_Helmert_ex/Helmert_ex_" + str(start_1)[:-2] + ".csv"
+		data_ex = pd.read_csv(data_ex_dir)
+		data = pd.concat([latlon_ex, data, data_ex.loc[:, ["coastal_region_1", "coastal_region_2", "area_label"]]], axis=1)
+		save_name = dirs + "Helmert_both_90_netcdf4_" + str(start_1)[:6] + ".csv"
 		print(save_name)
 		data.to_csv(save_name, index=False)
 
+#get_helmert_10m_both_90_csv()
 
 
 
 
 def get_helmert_10m_by_year_csv():
 	dirs = "../data/csv_Helmert_netcdf4_by_year/"
-	mkdir(dirs)
+	if not os.path.exists(dirs):
+		os.makedirs(dirs)
 
 	start_list = []
 	n = 20000000
@@ -1011,6 +1074,7 @@ def get_helmert_10m_by_year_csv():
 			start_0101 = date(start//10000, 1, 1)
 			start_date = date(start//10000, (start%10000)//100, (start%10000)%100)
 			start_from_0101_idx = (start_date-start_0101).days
+			print(start_date, L)
 
 			nc_fname = nc_file_list[i]
 			_, result_u10, result_v10 = calc_data.get_1month_netcdf4_data(nc_fname)
@@ -1033,8 +1097,6 @@ def get_helmert_10m_by_year_csv():
 				)
 			data_array_iw = np.array(data_iw)
 			data_iw_year = np.concatenate([data_iw_year, data_array_iw], axis=0)
-
-			print("\n")
 
 		data_w_year = data_w_year[1:, :, :]
 		data_iw_year = data_iw_year[1:, :, :]
@@ -1093,6 +1155,7 @@ def get_helmert_10m_by_year_csv():
 		data.to_csv(save_name, index=False)
 
 
+#get_helmert_10m_by_year_csv()
 
 
 
@@ -1117,7 +1180,7 @@ def search_corr_map_30():
 			data = data.loc[:, ["A", "theta", "R2", "epsilon2", "ic0_30", "sit_30"]]
 			print(data.columns)
 			print(data.dropna().head(2))
-			print(np.array(data.dropna()[0:2,:]))
+			print(np.array(data.dropna())[0:2,:])
 			accumulate_data.append(np.array(data))
 		accumulate_data = np.array(accumulate_data)
 		#data_A_ic0 = accumulate_data[:, :, [0,4]]
@@ -1138,10 +1201,14 @@ def search_corr_map_30():
 		#corr_all.append(corr_list)
 		df_corr = pd.DataFrame({"corr": corr_list})
 		df_corr = pd.concat([latlon_ex, df_corr, data_ex.loc[:, ["coastal_region_1", "coastal_region_2", "area_label"]]], axis=1)
-		corr_grid_pos = df_corr.loc[df_corr.corr>=0.7, :].dropna().index
-		corr_grid_neg = df_corr.loc[df_corr.corr<=-0.7, :].dropna().index
-		plot_grids_pos = random.sample(corr_grid_pos, 15)
-		plot_grids_neg = random.sample(corr_grid_neg, 15)
+		corr_grid_pos = df_corr.loc[(df_corr["corr"]>=0.7)&(df_corr["area_label"].isin([0,1,4,5,7,8,10,12,16])), :].dropna().index
+		corr_grid_neg = df_corr.loc[(df_corr["corr"]<=-0.7)&(df_corr["area_label"].isin([0,1,4,5,7,8,10,12,16])), :].dropna().index
+		try:
+			plot_grids_pos = random.sample(np.array(corr_grid_pos).tolist(), 15)
+			plot_grids_neg = random.sample(np.array(corr_grid_neg).tolist(), 15)
+		except:
+			plot_grids_pos = random.sample(np.array(corr_grid_pos).tolist(), 5)
+			plot_grids_neg = random.sample(np.array(corr_grid_neg).tolist(), 5)
 		for grid in plot_grids_pos:
 			plot_A = accumulate_data[:, grid, 0]
 			plot_ic0 = accumulate_data[:, grid, 4]
@@ -1159,7 +1226,7 @@ def search_corr_map_30():
 			plt.savefig(save_name)
 			plt.close()
 
-		m = Basemap(lon_0=180, boundinglat=50, resolution='l', projection='npstere')
+		m = Basemap(lon_0=180, boundinglat=65, resolution='l', projection='npstere')
 		m.drawcoastlines(color = '0.15')
 		m.fillcontinents(color='#555555')
 		lon = np.array(latlon_ex.Lon)
@@ -1168,17 +1235,19 @@ def search_corr_map_30():
 		m.scatter(x[plot_grids_pos], y[plot_grids_pos], marker='o', color = "r", s=2, alpha=0.9)
 		m.scatter(x[plot_grids_neg], y[plot_grids_neg], marker='o', color = "b", s=2, alpha=0.9)
 		for grid in plot_grids_pos:
-			m.annotate(str(grid), xy=(x[grid], y[grid]), xycoords='data', xytext=(x[grid], y[grid]), textcoords='data', color='r')
+			plt.annotate(str(grid), xy=(x[grid], y[grid]), xycoords='data', xytext=(x[grid], y[grid]), textcoords='data', color='r')
 		for grid in plot_grids_neg:
-			m.annotate(str(grid), xy=(x[grid], y[grid]), xycoords='data', xytext=(x[grid], y[grid]), textcoords='data', color='b')
-		plt.savefig(dirs + "ic0_A_grid_info.png")
+			plt.annotate(str(grid), xy=(x[grid], y[grid]), xycoords='data', xytext=(x[grid], y[grid]), textcoords='data', color='b')
+		plt.savefig(dirs + "ic0_A_grid_info_" + month + ".png", dpi=300)
 		plt.close()
+
+#search_corr_map_30()
 
 
 
 
 def map_corr_median():
-	dirs = "../result_h/corr_map/"
+	dirs = "../result_h/corr_map/corr_median/"
 	if not os.path.exists(dirs):
 		os.makedirs(dirs)
 
@@ -1194,12 +1263,12 @@ def map_corr_median():
 			data = data.loc[:, ["A", "theta", "R2", "epsilon2", "ic0_30_median", "sit_30_median"]]
 			print(data.columns)
 			print(data.dropna().head(2))
-			print(np.array(data.dropna()[0:2,:]))
+			print(np.array(data.dropna())[0:2,:])
 			accumulate_data.append(np.array(data))
 		accumulate_data = np.array(accumulate_data)
 		#data_A_ic0 = accumulate_data[:, :, [0,4]]
 
-		#corr_list = []
+		corr_list = []
 		for i in range(145**2):
 			data_A = accumulate_data[:, i, 0]
 			#data_A = data_A[~np.isnan(data_A)]
@@ -1219,7 +1288,7 @@ def map_corr_median():
 		visualize.plot_map_once(corr_list, data_type="type_non_wind", show=False, 
 			save_name=save_name, vmax=1, vmin=-1, cmap=plt.cm.jet)
 
-
+#map_corr_median()
 
 
 
@@ -1231,10 +1300,12 @@ def print_describe_data_30():
 
 	file_list = sorted(glob.glob("../data/csv_Helmert_both_30/Helmert_both_30_*.csv"))
 	for file in file_list:
+		print(file)
 		df = pd.read_csv(file)
 		data = df.groupby("area_label")[["A", "theta", "R2", "N_c", "ocean_u", "ocean_v", "mean_iw_u", "mean_iw_v", "mean_w_u", "mean_w_v"]].describe()
 		data.to_csv(dirs + "describe_data_30_" + file[44:])
 
+#print_describe_data_30()
 
 
 def print_describe_data_90():
@@ -1244,9 +1315,12 @@ def print_describe_data_90():
 
 	file_list = sorted(glob.glob("../data/csv_Helmert_both_90/Helmert_both_90_*.csv"))
 	for file in file_list:
+		print(file)
 		df = pd.read_csv(file)
 		data = df.groupby("area_label")[["A_90", "theta_90", "R2_90", "epsilon2_90", "N_c_90", "ocean_u_90", "ocean_v_90", "mean_iw_u_90", "mean_iw_v_90", "mean_w_u_90", "mean_w_v_90"]].describe()
 		data.to_csv(dirs + "describe_data_90_" + file[44:])
+
+#print_describe_data_90()
 
 
 
@@ -1260,15 +1334,112 @@ def print_describe_data_by_year():
 
 	file_list = sorted(glob.glob("../data/csv_Helmert_by_year/Helmert_by_year_*.csv"))
 	for file in file_list:
+		print(file)
 		df = pd.read_csv(file)
 		df = pd.concat([latlon_ex, df, data_ex.loc[:, ["coastal_region_1", "coastal_region_2", "area_label"]]], axis=1)
 		data = df.groupby("area_label")[["A", "theta", "R2", "N_c", "ocean_u", "ocean_v", "mean_iw_u", "mean_iw_v", "mean_w_u", "mean_w_v"]].describe()
 		data.to_csv(dirs + "describe_data_by_year_" + file[44:])
 
+#print_describe_data_by_year()
 
 
 
-def corr_divide_ic0_rank():
+def plot_netcdf4_data():
+	dirs_A_30 = "../result_nc/A/A_30/"
+	dirs_R2_30 = "../result_nc/R2/R2_30/"
+	dirs_theta_30 = "../result_nc/theta/theta_30/"
+	dirs_epsilon2_30 = "../result_nc/epsilon2/epsilon2_30/"
+
+	dirs_A_90 = "../result_nc/A/A_90/"
+	dirs_R2_90 = "../result_nc/R2/R2_90/"
+	dirs_theta_90 = "../result_nc/theta/theta_90/"
+	dirs_epsilon2_90 = "../result_nc/epsilon2/epsilon2_90/"
+
+	dirs_A_by_year = "../result_nc/A/A_by_year/"
+	dirs_R2_by_year = "../result_nc/R2/R2_by_year/"
+	dirs_theta_by_year = "../result_nc/theta/theta_by_year/"
+	dirs_epsilon2_by_year = "../result_nc/epsilon2/epsilon2_by_year/"
+	"""
+	dirs_corr_map = "../result_nc/corr_map/"
+	dirs_corr_map_search_grid = "../result_nc/corr_map_search_grid/"
+	dirs_mean_vector = "../result_nc/mean_vector/"
+	dirs_print_data = "../result_nc/print_data/"
+	dirs_scatter = "../result_nc/scatter/"
+	dirs_test = "../result_nc/test/"
+	dirs_ts_30_by_year = "../result_nc/ts_30_by_year/"
+	dirs_ts_by_month = "../result_nc/ts_by_month/"
+	dirs_ts_by_month_all_year = "../result_nc/ts_by_month_all_year/"
+	"""
+	dirs_list = [
+		dirs_A_30
+		dirs_R2_30
+		dirs_theta_30
+		dirs_epsilon2_30
+		dirs_A_90
+		dirs_R2_90
+		dirs_theta_90
+		dirs_epsilon2_90
+		dirs_A_by_year
+		dirs_R2_by_year
+		dirs_theta_by_year
+		dirs_epsilon2_by_year
+		]
+	for dirs in dirs_list:
+		if not os.path.exists(dirs):
+			os.makedirs(dirs)
+
+	file_list_30 = "../data/csv_Helmert_both_30_netcdf4/*.csv"
+	file_list_90 = "../data/csv_Helmert_both_90_netcdf4/*.csv"
+	file_list_year = "../data/csv_Helmert_netcdf4_by_year/*.csv"
+
+	y_list = ["03", "04", "05", "06", "07", "08", "09", "10", "13", "14", "15", "16"]
+	month_list = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"]
+
+	for file in file_list_30:
+		data = pd.read_csv(file)
+		save_name_A = dirs_A_30 + file[36:42] + ".png"
+		visualize.plot_map_once(np.array(data["A"]), data_type="type_non_wind", show=False, 
+			save_name=save_name_A, vmax=0.025, vmin=0, cmap=plt.cm.jet)
+		save_name_theta = dirs_theta_30 + file[36:42] + ".png"
+		visualize.plot_map_once(np.array(data["theta"]), data_type="type_non_wind", show=False, 
+			save_name=save_name_theta, vmax=180, vmin=-180, cmap=cm_angle_2)
+		save_name_R2 = dirs_R2_30 + file[36:42] + ".png"
+		visualize.plot_map_once(np.array(data["R2"]), data_type="type_non_wind", show=False, 
+			save_name=save_name_R2, vmax=1, vmin=0, cmap=plt.cm.jet)
+		save_name_e2 = dirs_epsilon2_30 + file[36:42] + ".png"
+		visualize.plot_map_once(np.array(data["epsilon2"]), data_type="type_non_wind", show=False, 
+			save_name=save_name_e2, vmax=1.5, vmin=0, cmap=plt.cm.jet)
+
+	for file in file_list_90:
+		data = pd.read_csv(file)
+		save_name_A = dirs_A_90 + file[36:42] + ".png"
+		visualize.plot_map_once(np.array(data["A_90"]), data_type="type_non_wind", show=False, 
+			save_name=save_name_A, vmax=0.025, vmin=0, cmap=plt.cm.jet)
+		save_name_theta = dirs_theta_90 + file[36:42] + ".png"
+		visualize.plot_map_once(np.array(data["theta_90"]), data_type="type_non_wind", show=False, 
+			save_name=save_name_theta, vmax=180, vmin=-180, cmap=cm_angle_2)
+		save_name_R2 = dirs_R2_90 + file[36:42] + ".png"
+		visualize.plot_map_once(np.array(data["R2_90"]), data_type="type_non_wind", show=False, 
+			save_name=save_name_R2, vmax=1, vmin=0, cmap=plt.cm.jet)
+		save_name_e2 = dirs_epsilon2_90 + file[36:42] + ".png"
+		visualize.plot_map_once(np.array(data["epsilon2_90"]), data_type="type_non_wind", show=False, 
+			save_name=save_name_e2, vmax=1.5, vmin=0, cmap=plt.cm.jet)
+
+	for file in file_list_year:
+		data = pd.read_csv(file)
+		save_name_A = dirs_A_by_year + file[36:38] + ".png"
+		visualize.plot_map_once(np.array(data["A"]), data_type="type_non_wind", show=False, 
+			save_name=save_name_A, vmax=0.025, vmin=0, cmap=plt.cm.jet)
+		save_name_theta = dirs_theta_by_year + file[36:38] + ".png"
+		visualize.plot_map_once(np.array(data["theta"]), data_type="type_non_wind", show=False, 
+			save_name=save_name_theta, vmax=180, vmin=-180, cmap=cm_angle_2)
+		save_name_R2 = dirs_R2_by_year + file[36:38] + ".png"
+		visualize.plot_map_once(np.array(data["R2"]), data_type="type_non_wind", show=False, 
+			save_name=save_name_R2, vmax=1, vmin=0, cmap=plt.cm.jet)
+		save_name_e2 = dirs_epsilon2_by_year + file[36:38] + ".png"
+		visualize.plot_map_once(np.array(data["epsilon2"]), data_type="type_non_wind", show=False, 
+			save_name=save_name_e2, vmax=1.5, vmin=0, cmap=plt.cm.jet)
+
 
 
 
@@ -1284,39 +1455,14 @@ def corr_divide_ic0_rank():
 #if __name__ == '__main__':
 	"""
 	TODO
+	・csv_by_year_ncの201612の分を追加で作る
+	・plot_netcdf4__data以下の関数の実行
 	・作った関数の確認
 		ディレクトリ，変数，for文の文字，enumerateなど
-	・helmert_csv
-		行列の形
-		90_90の修正
-	#	by_yearの方は，forの風の方がおかしい
-	#	最後に拡張するデータ
-	#	信頼できない領域と北極点周辺を欠損にする処理を追加
-	#・マップの可視化を使う部分はvisualize関数を極力使う
-	#・search_corr_mapのディレクトリとか最後の方の修正と，medianでの相関をマップ出力するコードを追加
-	#・patch_20180106.pyのic0_30とかの拡張情報を追加する部分をもう一回確認
 	・visual_7系，enumerateを確認
-	・corr_divide_ic0_rank関数の実装
+	(・corr_divide_ic0_rank関数の実装
 	"""
 
-	"""
-	test_w_iw_by_year()
-	ocean_30_vs_90_with_colorbar()
-	for i in range(5):
-		map_corr_slide_month(slide=i)
-	corr_by_ic0_norm()
-	ts_30_by_year()
-	get_helmert_test()
-	compare_2_both_30_csv()
-	get_helmert_10m_both_30_csv()
-	get_helmert_10m_both_90_csv()
-	get_helmert_10m_30_90_csv()
-	get_helmert_10m_by_year_csv()
-	search_corr_map_30()
-	print_describe_data_30()
-	print_describe_data_90()
-	corr_divide_ic0_rank()
-	"""
 
 
 
