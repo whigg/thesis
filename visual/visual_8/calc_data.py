@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 from datetime import datetime, date, timezone, timedelta
 import netCDF4
+from mpl_toolkits.basemap import Basemap
 
 #iMac用
 
@@ -69,46 +70,6 @@ def get_1day_sit_data(sit_file_name):
 	sit_145 = sit[grid145]
 	return pd.DataFrame({"sit_145": sit_145})
 
-def get_1day_netcdf4_data(netcdf4_file_name, start_day, end_day):
-	"""
-	修正必要
-	start_dateからend_dateを取り出すようにはなっていない！
-	"""
-	#df = pd.read_csv("../data/latlon_ex.csv")
-	df = get_lonlat_data()
-	unreliable_index = df[df.Lat<=49].index
-
-	nc = netCDF4.Dataset(netcdf4_file_name, "r")
-	time_var = nc.variables["time"]
-	dtime = netCDF4.num2date(time_var[:], time_var.units)
-
-	#start: ファイルのはじめの日にち
-	#end: 取り出したい日付
-	start_date = [start_day//10000, (start_day%10000)//100, (start_day%10000)%100]
-	end_date = [end_day//10000, (end_day%10000)//100, (end_day%10000)%100]
-	d1 = datetime(start_date[0], start_date[1], start_date[2])
-	d2 = datetime(end_date[0], end_date[1], end_date[2])
-	L = (d2-d1).days+1
-	day_n = L-1
-
-	nc_lon = nc["longitude"][:]
-	nc_lat = nc["latitude"][:]
-	nc_u10 = nc["u10"][:]
-	nc_v10 = nc["v10"][:]
-	nc_t2m = nc["t2m"][:]
-
-	idx_lon = df["Lon"].apply(lambda x: np.argmin(np.absolute(nc_lon-x)))
-	idx_lat = df["Lat"].apply(lambda x: np.argmin(np.absolute(nc_lat-x)))
-
-	result_t2m = nc_t2m[day_n, idx_lat, idx_lon]-273
-	result_u10 = nc_u10[day_n, idx_lat, idx_lon]
-	result_v10 = nc_v10[day_n, idx_lat, idx_lon]
-
-	result_t2m[unreliable_index] = np.nan
-	result_u10[unreliable_index] = np.nan
-	result_v10[unreliable_index] = np.nan
-
-	return result_t2m, result_u10, result_v10
 
 def get_1month_netcdf4_data(netcdf4_file_name):
 	#df = pd.read_csv("../data/latlon_ex.csv")
@@ -131,6 +92,14 @@ def get_1month_netcdf4_data(netcdf4_file_name):
 	result_t2m = nc_t2m[:, idx_lat, idx_lon]-273
 	result_u10 = nc_u10[:, idx_lat, idx_lon]
 	result_v10 = nc_v10[:, idx_lat, idx_lon]
+
+	m = Basemap(lon_0=180, boundinglat=40, resolution='l', projection='npstere')
+	df = get_lonlat_data()
+	df_lon, df_lat = np.array(df["Lon"]), np.array(df["Lat"])
+	for i in range(result_u10.shape[0]):
+		u_out, v_out = m.rotate_vector(result_u10[i, :], result_v10[i, :], df_lon, df_lat, returnxy=False)
+		result_u10[i, :] = u_out
+		result_v10[i, :] = v_out
 
 	result_t2m[:, unreliable_index] = np.nan
 	result_u10[:, unreliable_index] = np.nan
