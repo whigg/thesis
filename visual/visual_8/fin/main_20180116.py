@@ -1055,7 +1055,7 @@ def plot_nc_data_ts(num):
 			fig.figsize=(12, 9)
 			ax.plot(dates1, data_A_all_year[:len(dates1)], '-', color="k")
 			ax.plot(dates2, data_A_all_year[len(dates1):], '-', color="k")
-			ax.set_ylim([0, 0.015])
+			ax.set_ylim([0, 0.025])
 			ax.set_ylabel('A')
 			for item in date_1_6:
 				ax.axvline(item, color='coral', linestyle='-', lw=0.75, alpha=0.75)
@@ -1115,7 +1115,7 @@ def plot_nc_data_ts(num):
 
 #plot_nc_data_ts(1)
 #plot_nc_data_ts(2)
-#plot_nc_data_ts(3)
+plot_nc_data_ts(3)
 
 
 
@@ -1157,76 +1157,6 @@ def compare_gw_w10():
 
 #compare_gw_w10()
 
-
-
-def plot_nc_data_corr():
-	dirs_corr_map = "../result_nc/corr_map/"
-	dirs_corr_map_search_grid = "../result_nc/corr_map_search_grid/"
-
-
-
-
-
-
-def print_nc_data():
-	def print_describe_data_30(dirs_30):
-		if not os.path.exists(dirs_30):
-			os.makedirs(dirs_30)
-		file_list = sorted(glob.glob("../data/csv_Helmert_both_30_netcdf4/Helmert_both_30_*.csv"))
-		for file in file_list:
-			print(file)
-			df = pd.read_csv(file)
-			data = df.groupby("area_label")[["A", "theta", "R2", "N_c", "ocean_u", "ocean_v", "mean_iw_u", "mean_iw_v", "mean_w_u", "mean_w_v"]].describe()
-			data.to_csv(dirs_30 + "describe_data_30_" + file[44:])
-
-	def print_describe_data_90(dirs_90):
-		if not os.path.exists(dirs_90):
-			os.makedirs(dirs_90)
-		file_list = sorted(glob.glob("../data/csv_Helmert_both_90/Helmert_both_90_*.csv"))
-		for file in file_list:
-			print(file)
-			df = pd.read_csv(file)
-			data = df.groupby("area_label")[["A_90", "theta_90", "R2_90", "epsilon2_90", "N_c_90", "ocean_u_90", "ocean_v_90", "mean_iw_u_90", "mean_iw_v_90", "mean_w_u_90", "mean_w_v_90"]].describe()
-			data.to_csv(dirs_90 + "describe_data_90_" + file[44:])
-
-	def print_describe_data_by_year(dirs_year):
-		if not os.path.exists(dirs_year):
-			os.makedirs(dirs_year)
-		data_ex_dir = "../data/csv_Helmert_ex/Helmert_ex_200301.csv"
-		data_ex = pd.read_csv(data_ex_dir)
-		file_list = sorted(glob.glob("../data/csv_Helmert_by_year/Helmert_by_year_*.csv"))
-		for file in file_list:
-			print(file)
-			df = pd.read_csv(file)
-			df = pd.concat([latlon_ex, df, data_ex.loc[:, ["coastal_region_1", "coastal_region_2", "area_label"]]], axis=1)
-			data = df.groupby("area_label")[["A", "theta", "R2", "N_c", "ocean_u", "ocean_v", "mean_iw_u", "mean_iw_v", "mean_w_u", "mean_w_v"]].describe()
-			data.to_csv(dirs_year + "describe_data_by_year_" + file[44:])
-
-	dirs_30 = "../result_nc/print_data_netcdf4/print_data_netcdf4_30/"
-	dirs_90 = "../result_nc/print_data_netcdf4/print_data_netcdf4_90/"
-	dirs_year = "../result_nc/print_data_netcdf4/print_data_netcdf4_by_year/"
-	print_describe_data_30(dirs_30)
-	print_describe_data_90(dirs_90)
-	print_describe_data_by_year(dirs_year)
-
-
-
-
-
-
-
-
-
-"""
-TODO
-・いろいろ修正が必要なので，実行前に全ての関数を見直す
-・visual_7系，enumerateを確認
-"""
-
-"""
-dirs_mean_vector = "../result_nc/mean_vector/"
-dirs_test = "../result_nc/test/"
-"""
 
 
 
