@@ -167,7 +167,7 @@ def get_w_hermert_data(wind_file_name, ice_file_name, coeff_file_name):
 	w_u, w_v, w_speed = np.array(w_data["w_u"]), np.array(w_data["w_v"]), np.array(w_data["w_speed"])
 	iw_data = get_1day_iw_data(ice_file_name)
 	iw_u, iw_v, iw_speed = np.array(iw_data["iw_u"]), np.array(iw_data["iw_v"]), np.array(iw_data["iw_speed"])
-	df_coeffs = get_1month_hermert_data(coeff_file_name)
+	df_coeffs = get_1month_helmert_data(coeff_file_name)
 	mean_ocean_u = np.array(df_coeffs["ocean_u"])
 	mean_ocean_v = np.array(df_coeffs["ocean_v"])
 

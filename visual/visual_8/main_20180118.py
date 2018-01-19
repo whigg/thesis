@@ -97,7 +97,7 @@ def main_data(start, end, **kwargs):
 		ic0_145_file_name = "../data/csv_ic0/IC0_" + day + ".csv"
 		sit_145_file_name = "../data/csv_sit/SIT_" + day + ".csv"
 		coeff_file_name = "../data/csv_A_30/ssc_amsr_ads" + str(year) + str(month) + "_" + str(span) + "_fin.csv"
-		hermert_file_name = "../data/csv_Helmert_30/Helmert_30_" + str(day)[:6] + ".csv"
+		hermert_file_name = "../data/csv_Helmert_both_30/Helmert_both_30_" + str(day)[:6] + ".csv"
 		# wind10m_file_name = "../data/netcdf4/" + day[2:] + ".csv"
 		# t2m_file_name = "../data/netcdf4/" + day[2:] + ".csv"
 
@@ -117,11 +117,11 @@ def main_data(start, end, **kwargs):
 
 		data = pd.DataFrame({"data_idx": np.array(ocean_grid_145).ravel()})
 		if "ex_1" in get_columns:
-			print("\t{}\n\t{}\n\t{}\n\t{}".format(wind_file_name, ice_file_name, coeff_file_name))
+			print("\t{}\n\t{}\n\t{}".format(wind_file_name, ice_file_name, coeff_file_name))
 			tmp = calc_data.get_w_regression_data(wind_file_name, ice_file_name, coeff_file_name)
 			data = pd.concat([data, tmp], axis=1)
 		if "ex_2" in get_columns:
-			print("\t{}\n\t{}\n\t{}\n\t{}".format(wind_file_name, ice_file_name, hermert_file_name))
+			print("\t{}\n\t{}\n\t{}".format(wind_file_name, ice_file_name, hermert_file_name))
 			tmp = calc_data.get_w_hermert_data(wind_file_name, ice_file_name, hermert_file_name)
 			data = pd.concat([data, tmp], axis=1)
 		if "w" in get_columns:
@@ -185,7 +185,7 @@ def plot_ic0_sit_ratio():
 	start_list_plus_1month = start_list + [20170901]
 	for i, start in enumerate(start_list):
 		print("******************  {}/{}  *******************".format(i+1, M))
-		helmert_30_30_fname = "../data/csv_Helmert_30/Helmert_30_" + str(start)[:6] + ".csv"
+		helmert_30_30_fname = "../data/csv_Helmert_both_30/Helmert_both_30_" + str(start)[:6] + ".csv"
 		data_30 = pd.read_csv(helmert_30_30_fname)
 		ic0_30 = np.array(data_30["ic0_30"])
 		sit_30 = np.array(data_30["sit_30"])
@@ -215,9 +215,9 @@ def plot_ic0_sit_ratio():
 		data_ratio = data_ave/np.array(data_30["A"])
 		save_name_ratio = dirs_ratio + str(start)[:6] + ".png"
 		visualize.plot_map_once(data_ratio, data_type="type_non_wind", show=False, 
-			save_name=save_name_ratio, vmax=1.4, vmin=0.8, cmap=plt.cm.jet)
+			save_name=save_name_ratio, vmax=3.5, vmin=1, cmap=plt.cm.jet)
 
-
+#plot_ic0_sit_ratio()
 
 
 
@@ -229,6 +229,111 @@ def plot_ic0_sit_ratio():
 
 
 ###############################################################################################################
+
+
+def plot_data_map():
+	dirs_A_30 = "../result_thesis_h/A/A_30/"
+	dirs_R2_30 = "../result_thesis_h/R2/R2_30/"
+	dirs_theta_30 = "../result_thesis_h/theta/theta_30/"
+	dirs_epsilon2_30 = "../result_thesis_h/epsilon2/epsilon2_30/"
+
+	dirs_A_90 = "../result_thesis_h/A/A_90/"
+	dirs_R2_90 = "../result_thesis_h/R2/R2_90/"
+	dirs_theta_90 = "../result_thesis_h/theta/theta_90/"
+	dirs_epsilon2_90 = "../result_thesis_h/epsilon2/epsilon2_90/"
+
+	dirs_A_by_year = "../result_thesis_h/A/A_by_year/"
+	dirs_R2_by_year = "../result_thesis_h/R2/R2_by_year/"
+	dirs_theta_by_year = "../result_thesis_h/theta/theta_by_year/"
+	dirs_epsilon2_by_year = "../result_thesis_h/epsilon2/epsilon2_by_year/"
+	"""
+	dirs_list = [
+		dirs_A_30,
+		dirs_R2_30,
+		dirs_theta_30,
+		dirs_epsilon2_30,
+		dirs_A_90,
+		dirs_R2_90,
+		dirs_theta_90,
+		dirs_epsilon2_90,
+		dirs_A_by_year,
+		dirs_R2_by_year,
+		dirs_theta_by_year,
+		dirs_epsilon2_by_year
+		]
+	for dirs in dirs_list:
+		if not os.path.exists(dirs):
+			os.makedirs(dirs)
+	"""
+	file_list_30 = sorted(glob.glob("../data/csv_Helmert_both_30/Helmert_both_30_*.csv"))
+	file_list_90 = sorted(glob.glob("../data/csv_Helmert_both_90/Helmert_both_90_*.csv"))
+	file_list_year = sorted(glob.glob("../data/csv_Helmert_by_year/Helmert_by_year_*.csv"))
+
+	for file in file_list_30:
+		data = pd.read_csv(file)
+		save_name_A = dirs_A_30 + file[44:50] + ".png"
+		print(save_name_A)
+		visualize.plot_map_once(np.array(data["A"]), data_type="type_non_wind", show=False, 
+			save_name=save_name_A, vmax=0.02, vmin=0, cmap=plt.cm.jet)
+		"""
+		save_name_theta = dirs_theta_30 + file[44:50] + ".png"
+		print(save_name_theta)
+		visualize.plot_map_once(np.array(data["theta"]), data_type="type_non_wind", show=False, 
+			save_name=save_name_theta, vmax=180, vmin=-180, cmap=cm_angle_2)
+		save_name_R2 = dirs_R2_30 + file[44:50] + ".png"
+		print(save_name_R2)
+		visualize.plot_map_once(np.array(data["R2"]), data_type="type_non_wind", show=False, 
+			save_name=save_name_R2, vmax=1, vmin=0, cmap=plt.cm.jet)
+		save_name_e2 = dirs_epsilon2_30 + file[44:50] + ".png"
+		print(save_name_e2)
+		visualize.plot_map_once(np.array(data["epsilon2"]), data_type="type_non_wind", show=False, 
+			save_name=save_name_e2, vmax=1.5, vmin=0, cmap=plt.cm.jet)
+		"""
+
+	for file in file_list_90:
+		data = pd.read_csv(file)
+		save_name_A = dirs_A_90 + file[44:50] + ".png"
+		print(save_name_A)
+		visualize.plot_map_once(np.array(data["A_90"]), data_type="type_non_wind", show=False, 
+			save_name=save_name_A, vmax=0.02, vmin=0, cmap=plt.cm.jet)
+		"""
+		save_name_theta = dirs_theta_90 + file[44:50] + ".png"
+		print(save_name_theta)
+		visualize.plot_map_once(np.array(data["theta_90"]), data_type="type_non_wind", show=False, 
+			save_name=save_name_theta, vmax=180, vmin=-180, cmap=cm_angle_2)
+		save_name_R2 = dirs_R2_90 + file[44:50] + ".png"
+		print(save_name_R2)
+		visualize.plot_map_once(np.array(data["R2_90"]), data_type="type_non_wind", show=False, 
+			save_name=save_name_R2, vmax=1, vmin=0, cmap=plt.cm.jet)
+		save_name_e2 = dirs_epsilon2_90 + file[44:50] + ".png"
+		print(save_name_e2)
+		visualize.plot_map_once(np.array(data["epsilon2_90"]), data_type="type_non_wind", show=False, 
+			save_name=save_name_e2, vmax=1.5, vmin=0, cmap=plt.cm.jet)
+		"""
+
+	for file in file_list_year:
+		data = pd.read_csv(file)
+		save_name_A = dirs_A_by_year + file[44:50] + ".png"
+		print(save_name_A)
+		visualize.plot_map_once(np.array(data["A"]), data_type="type_non_wind", show=False, 
+			save_name=save_name_A, vmax=0.02, vmin=0, cmap=plt.cm.jet)
+		"""
+		save_name_theta = dirs_theta_by_year + file[44:50] + ".png"
+		print(save_name_theta)
+		visualize.plot_map_once(np.array(data["theta"]), data_type="type_non_wind", show=False, 
+			save_name=save_name_theta, vmax=180, vmin=-180, cmap=cm_angle_2)
+		save_name_R2 = dirs_R2_by_year + file[44:50] + ".png"
+		print(save_name_R2)
+		visualize.plot_map_once(np.array(data["R2"]), data_type="type_non_wind", show=False, 
+			save_name=save_name_R2, vmax=1, vmin=0, cmap=plt.cm.jet)
+		save_name_e2 = dirs_epsilon2_by_year + file[44:50] + ".png"
+		print(save_name_e2)
+		visualize.plot_map_once(np.array(data["epsilon2"]), data_type="type_non_wind", show=False, 
+			save_name=save_name_e2, vmax=1.5, vmin=0, cmap=plt.cm.jet)
+		"""
+
+#plot_data_map()
+
 
 def plot_nc_data_map():
 	dirs_A_30 = "../result_nc/A/A_30/"
@@ -349,19 +454,14 @@ def plot_nc_data_ts_no_15_16(num):
 		data_theta_year_list = []
 		data_R2_year_list = []
 		data_e2_year_list = []
-		data_count_year_list = []
-		for year in y_list_c:
+		for year in y_list:
 			data_A_month, data_theta_month, data_R2_month, data_e2_month = [], [], [], []
 			for month in month_list:
 				print(year + month)
 				file_list = "../data/csv_Helmert_both_30_netcdf4/Helmert_both_30_netcdf4_20" + year + month + ".csv"
 				df = pd.read_csv(file_list)
 				data = df.groupby("area_label")[["A", "theta", "R2", "epsilon2"]].describe()
-				"""
-				for item in ["A", "theta", "R2", "epsilon2"]:
-					data.loc[:, (item, "1sigma_pos")] = data.loc[:, (item, "mean")] + data.loc[:, (item, "std")]
-					data.loc[:, (item, "1sigma_neg")] = data.loc[:, (item, "mean")] - data.loc[:, (item, "std")]
-				"""
+
 				data_A = data.loc[:, ("A", ["mean", "count"])].values
 				data_theta = data.loc[:, ("theta", ["mean", "count"])].values
 				data_R2 = data.loc[:, ("R2", ["mean", "count"])].values
@@ -380,69 +480,74 @@ def plot_nc_data_ts_no_15_16(num):
 			data_theta_year_list.append(data_theta_month)
 			data_R2_year_list.append(data_R2_month)
 			data_e2_year_list.append(data_e2_month)
-			data_count_year_list.append(data_count_month)
 
-		"""
-		gridspec使う必要なし
-		by_yearのライン追加
-		plt.plotの中身
-		save/nameを各プロットに
-		色，凡例
-		"""
-		len_y_c = len(y_list_c)
+		len_y = len(y_list)
 		for i in range(18):
-			plt.figure(figsize=(9, 6))
-			gs = gridspec.GridSpec(3,2)
 			dates = pd.date_range("2001", periods=12, freq='MS')
 
-			plt.subplot(gs[0, 0])
-			for j in range(len_y_c):
-				plt.plot(dates, data_A_month[:,i,1], '-', color="k")
-			plt.ylim([0, 0.025])
-			plt.ylabel('A')
-			plt.subplot(gs[0, 0]).get_xaxis().set_major_formatter(mdates.DateFormatter('%m'))
-
-			plt.subplot(gs[1, 0])
-			for j in range(len_y_c):
-				plt.plot(dates, data_theta_month[:,i,1], '-', color="k")
-			plt.ylim([-60, 60])
-			plt.yticks([-60, -40, -20, 0, 20, 40, 60])
-			plt.ylabel(r'$\theta$')
-			plt.subplot(gs[1, 0]).get_xaxis().set_major_formatter(mdates.DateFormatter('%m'))
-
-			plt.subplot(gs[0, 1])
-			for j in range(len_y_c):
-				plt.plot(dates, data_R2_month[:,i,1], '-', color="k")
-			plt.ylim([0, 1])
-			plt.yticks([0, .2, .4, .6, .8, 1])
-			plt.ylabel(r'$R^{2}$')
-			plt.subplot(gs[0, 1]).get_xaxis().set_major_formatter(mdates.DateFormatter('%m'))
-
-			plt.subplot(gs[1, 1])
-			for j in range(len_y_c):
-				plt.plot(dates, data_e2_month[:,i,1], '-', color="k")
-			plt.ylim([0, 1.5])
-			plt.yticks([0, .5, 1, 1.5])
-			plt.ylabel(r'$e^{2}$')
-			plt.subplot(gs[1, 1]).get_xaxis().set_major_formatter(mdates.DateFormatter('%m'))
-
-			plt.subplot(gs[2, :])
-			for j in range(len_y_c):
-				y = data_A_month[:,i,0]
-				plt.plot(dates, y, '-', color="k")
-			#y_lim_min = max(y.min()-5,0)
-			#y_lim_min = y.min()
-			#y_lim_max = y.max()
-			#plt.ylim([y_lim_min, y_lim_max])
-			plt.ylabel("number of data")
-			plt.subplot(gs[2, :]).get_xaxis().set_major_formatter(mdates.DateFormatter('%m'))
+			fig, ax = plt.subplots(1, 1)
+			fig.figsize=(15, 6)
+			for j in range(len_y):
+				ax.plot(dates, data_A_year_list[j][:,i,1], '-', label = "20" + y_list[j])
+			ax.legend(bbox_to_anchor=(1.08, 0.8))
+			plt.subplots_adjust(right=0.75)
+			ax.set_ylim([0, 0.025])
+			ax.set_ylabel('A')
+			ax.xaxis.set_major_formatter(mdates.DateFormatter('%m'))
 			plt.grid(True)
+			plt.savefig(dirs + "A_area_" + str(i) + ".png", dpi=150)
+			plt.close()
 
-			plt.tight_layout()
+			fig, ax = plt.subplots(1, 1)
+			fig.figsize=(15, 6)
+			for j in range(len_y):
+				ax.plot(dates, data_theta_year_list[j][:,i,1], '-', label = "20" + y_list[j])
+			ax.legend(bbox_to_anchor=(1.08, 0.8))
+			plt.subplots_adjust(right=0.75)
+			ax.set_ylim([-60, 60])
+			ax.set_ylabel(r'$\theta$')
+			ax.xaxis.set_major_formatter(mdates.DateFormatter('%m'))
+			plt.grid(True)
+			plt.savefig(dirs + "theta_area_" + str(i) + ".png", dpi=150)
+			plt.close()
 
-			save_name = dirs + "all_area_" + str(i) + "_20" + year + ".png"
-			print(save_name)
-			plt.savefig(save_name, dpi=400)
+			fig, ax = plt.subplots(1, 1)
+			fig.figsize=(15, 6)
+			for j in range(len_y):
+				ax.plot(dates, data_R2_year_list[j][:,i,1], '-', label = "20" + y_list[j])
+			ax.legend(bbox_to_anchor=(1.08, 0.8))
+			plt.subplots_adjust(right=0.75)
+			ax.set_ylim([0, 1])
+			ax.set_ylabel(r'$R^{2}$')
+			ax.xaxis.set_major_formatter(mdates.DateFormatter('%m'))
+			plt.grid(True)
+			plt.savefig(dirs + "R2_area_" + str(i) + ".png", dpi=150)
+			plt.close()
+
+			fig, ax = plt.subplots(1, 1)
+			fig.figsize=(15, 6)
+			for j in range(len_y):
+				ax.plot(dates, data_e2_year_list[j][:,i,1], '-', label = "20" + y_list[j])
+			ax.legend(bbox_to_anchor=(1.08, 0.8))
+			plt.subplots_adjust(right=0.75)
+			ax.set_ylim([0, 1.5])
+			ax.set_ylabel(r'$e^{2}$')
+			ax.xaxis.set_major_formatter(mdates.DateFormatter('%m'))
+			plt.grid(True)
+			plt.savefig(dirs + "e2_area_" + str(i) + ".png", dpi=150)
+			plt.close()
+
+			fig, ax = plt.subplots(1, 1)
+			fig.figsize=(15, 6)
+			for j in range(len_y):
+				y = data_A_year_list[j][:,i,0]
+				ax.plot(dates, y, '-', label = "20" + y_list[j])
+			ax.legend(bbox_to_anchor=(1.08, 0.8))
+			plt.subplots_adjust(right=0.75)
+			ax.set_ylabel("number of data")
+			ax.xaxis.set_major_formatter(mdates.DateFormatter('%m'))
+			plt.grid(True)
+			plt.savefig(dirs + "count_area_" + str(i) + ".png", dpi=150)
 			plt.close()
 
 	def ts_30_by_year(dirs):
@@ -450,12 +555,17 @@ def plot_nc_data_ts_no_15_16(num):
 			os.makedirs(dirs)
 
 		for month in month_list:
+		#for month in ["07", "08", "09", "10", "11", "12"]:
 			print("*************** " + month + " ***************")
 			data_A_year, data_theta_year, data_R2_year, data_e2_year = [], [], [], []
-			for year in y_list_c:
+			for year in y_list:
 				file_list = "../data/csv_Helmert_both_30_netcdf4/Helmert_both_30_netcdf4_20" + year + month + ".csv"
 				df = pd.read_csv(file_list)
 				data = df.groupby("area_label")[["A", "theta", "R2", "epsilon2"]].describe()
+
+				for item in ["A", "theta", "R2", "epsilon2"]:
+					data.loc[:, (item, "1sigma_pos")] = data.loc[:, (item, "mean")] + data.loc[:, (item, "std")]
+					data.loc[:, (item, "1sigma_neg")] = data.loc[:, (item, "mean")] - data.loc[:, (item, "std")]
 
 				data_A = data.loc[:, ("A", ["mean", "1sigma_pos", "1sigma_neg", "count"])].values
 				data_theta = data.loc[:, ("theta", ["mean", "1sigma_pos", "1sigma_neg", "count"])].values
@@ -472,195 +582,128 @@ def plot_nc_data_ts_no_15_16(num):
 			data_R2_year = np.array(data_R2_year)
 			data_e2_year = np.array(data_e2_year)
 
+			file_by_year = "../data/csv_Helmert_netcdf4_by_year/Helmert_netcdf4_by_year_" + month + ".csv"
+			data_by_year = pd.read_csv(file_by_year).groupby("area_label")[["A", "theta", "R2", "epsilon2"]].describe()
+
 			dates1 = pd.date_range("2003", "2011", freq='YS')[:-1]
-			dates2 = pd.date_range("2013", "2015", freq='YS')[:-1]
-			#print(dates1)
+			dates2 = pd.date_range("2013", "2017", freq='YS')[:-1]
 			N_dates1 = len(dates1)
 
-			#print(data_A_year[0,np.array(tmp.index),:])
 			for i in range(18):
 				print("\tarea: {}".format(i))
-				plt.figure(figsize=(6, 4))
-				gs = gridspec.GridSpec(3,2)
-				#gs.tight_layout(plt.figure(figsize=(6, 4)))
 
-				plt.subplot(gs[0, 0])
-				plt.plot(dates1, data_A_year[:N_dates1,i,1], '-', color="k")
-				plt.plot(dates2, data_A_year[N_dates1:,i,1], '-', color="k")
-				plt.fill_between(dates1, data_A_year[:N_dates1,i,2], data_A_year[:N_dates1,i,3],
+				fig, ax = plt.subplots(1, 1)
+				fig.figsize=(6, 4)
+				ax.plot(dates1, data_A_year[:N_dates1,i,1], '-', color="k")
+				ax.plot(dates2, data_A_year[N_dates1:,i,1], '-', color="k")
+				A_by_year = data_by_year.loc[(i), ("A", "mean")]
+				ax.plot([dates1[0], dates1[-1]], [A_by_year, A_by_year], "coral", linestyle='dashed')
+				ax.plot([dates2[0], dates2[-1]], [A_by_year, A_by_year], "coral", linestyle='dashed')
+				ax.fill_between(dates1, data_A_year[:N_dates1,i,2], data_A_year[:N_dates1,i,3],
 					facecolor='green', alpha=0.3)
-				plt.fill_between(dates2, data_A_year[N_dates1:,i,2], data_A_year[N_dates1:,i,3],
+				ax.fill_between(dates2, data_A_year[N_dates1:,i,2], data_A_year[N_dates1:,i,3],
 					facecolor='green', alpha=0.3)
-				plt.ylim([0, 0.025])
-				plt.ylabel('A')
-				plt.subplot(gs[0, 0]).get_xaxis().set_major_formatter(mdates.DateFormatter('%y'))
-
-				plt.subplot(gs[1, 0])
-				plt.plot(dates1, data_theta_year[:N_dates1,i,1], '-', color="k")
-				plt.plot(dates2, data_theta_year[N_dates1:,i,1], '-', color="k")
-				plt.fill_between(dates1, data_theta_year[:N_dates1,i,2], data_theta_year[:N_dates1,i,3],
-					facecolor='lightskyblue', alpha=0.3)
-				plt.fill_between(dates2, data_theta_year[N_dates1:,i,2], data_theta_year[N_dates1:,i,3],
-					facecolor='lightskyblue', alpha=0.3)
-				plt.ylim([-60, 60])
-				plt.yticks([-60, -40, -20, 0, 20, 40, 60])
-				plt.ylabel(r'$\theta$')
-				plt.subplot(gs[1, 0]).get_xaxis().set_major_formatter(mdates.DateFormatter('%y'))
-
-				plt.subplot(gs[0, 1])
-				plt.plot(dates1, data_R2_year[:N_dates1,i,1], '-', color="k")
-				plt.plot(dates2, data_R2_year[N_dates1:,i,1], '-', color="k")
-				plt.fill_between(dates1, data_R2_year[:N_dates1,i,2], data_R2_year[:N_dates1,i,3],
-					facecolor='coral', alpha=0.3)
-				plt.fill_between(dates2, data_R2_year[N_dates1:,i,2], data_R2_year[N_dates1:,i,3],
-					facecolor='coral', alpha=0.3)
-				plt.ylim([0, 1])
-				plt.yticks([0, .2, .4, .6, .8, 1])
-				plt.ylabel(r'$R^{2}$')
-				plt.subplot(gs[0, 1]).get_xaxis().set_major_formatter(mdates.DateFormatter('%y'))
-
-				plt.subplot(gs[1, 1])
-				plt.plot(dates1, data_e2_year[:N_dates1,i,1], '-', color="k")
-				plt.plot(dates2, data_e2_year[N_dates1:,i,1], '-', color="k")
-				plt.fill_between(dates1, data_e2_year[:N_dates1,i,2], data_e2_year[:N_dates1,i,3],
-					facecolor='silver', alpha=0.3)
-				plt.fill_between(dates2, data_e2_year[N_dates1:,i,2], data_e2_year[N_dates1:,i,3],
-					facecolor='silver', alpha=0.3)
-				plt.ylim([0, 1.5])
-				plt.yticks([0, .5, 1, 1.5])
-				plt.ylabel(r'$e^{2}$')
-				plt.subplot(gs[1, 1]).get_xaxis().set_major_formatter(mdates.DateFormatter('%y'))
-
-				plt.subplot(gs[2, :])
-				y1 = data_A_year[:N_dates1,i,0]
-				y2 = data_A_year[N_dates1:,i,0]
-				plt.plot(dates1, y1, '-', color="k")
-				plt.plot(dates2, y2, '-', color="k")
-				y_lim_min = max(y1.min()-5,0)
-				y_lim_max = y1.max()+5
-				plt.ylim([y_lim_min, y_lim_max])
-				#print(int(y_lim_max-y_lim_min+1))
-				#plt.yticks(y_lim_min, y_lim_max, int(y_lim_max-y_lim_min+1))
-				plt.ylabel("number of data")
-				plt.subplot(gs[2, :]).get_xaxis().set_major_formatter(mdates.DateFormatter('%y'))
-				plt.grid(True)
-
+				ax.set_ylim([0, 0.025])
+				ax.set_ylabel('A')
 				try:
-					plt.tight_layout()
+					ax.xaxis.set_major_formatter(mdates.DateFormatter('%y'))
 				except:
-					print("tight layout passed...")
-
-				save_name = dirs + "all_area_" + str(i) + "_" + month + ".png"
+					print(data_A_year[:,i,1])
+					print("skipping the for loop...  1")
+					continue
+				plt.grid(True)
+				save_name = dirs + "A_area_" + str(i) + "_" + month + ".png"
 				try:
 					plt.savefig(save_name, dpi=300)
 				except:
-					print("save passed...")
+					print(data_A_year[:,i,1])
+					print("skipping the for loop...  2")
+					continue
 				plt.close()
 
-	def ts_by_month_all_year(dirs):
-		if not os.path.exists(dirs):
-			os.makedirs(dirs)
+				fig, ax = plt.subplots(1, 1)
+				fig.figsize=(6, 4)
+				ax.plot(dates1, data_theta_year[:N_dates1,i,1], '-', color="k")
+				ax.plot(dates2, data_theta_year[N_dates1:,i,1], '-', color="k")
+				theta_by_year = data_by_year.loc[(i), ("theta", "mean")]
+				ax.plot([dates1[0], dates1[-1]], [theta_by_year, theta_by_year], "coral", linestyle='dashed')
+				ax.plot([dates2[0], dates2[-1]], [theta_by_year, theta_by_year], "coral", linestyle='dashed')
+				ax.fill_between(dates1, data_theta_year[:N_dates1,i,2], data_theta_year[:N_dates1,i,3],
+					facecolor='lightskyblue', alpha=0.3)
+				ax.fill_between(dates2, data_theta_year[N_dates1:,i,2], data_theta_year[N_dates1:,i,3],
+					facecolor='lightskyblue', alpha=0.3)
+				ax.set_ylim([-60, 60])
+				ax.set_ylabel(r'$\theta$')
+				ax.xaxis.set_major_formatter(mdates.DateFormatter('%y'))
+				plt.grid(True)
+				save_name = dirs + "theta_area_" + str(i) + "_" + month + ".png"
+				plt.savefig(save_name, dpi=300)
+				plt.close()
 
-		date_1_6 = []
-		for year in y_list:
-			date_1_6.append(pd.to_datetime("20"+year+"-01-01"))
-			date_1_6.append(pd.to_datetime("20"+year+"-07-01"))
+				fig, ax = plt.subplots(1, 1)
+				fig.figsize=(6, 4)
+				ax.plot(dates1, data_R2_year[:N_dates1,i,1], '-', color="k")
+				ax.plot(dates2, data_R2_year[N_dates1:,i,1], '-', color="k")
+				R2_by_year = data_by_year.loc[(i), ("R2", "mean")]
+				ax.plot([dates1[0], dates1[-1]], [R2_by_year, R2_by_year], "coral", linestyle='dashed')
+				ax.plot([dates2[0], dates2[-1]], [R2_by_year, R2_by_year], "coral", linestyle='dashed')
+				ax.fill_between(dates1, data_R2_year[:N_dates1,i,2], data_R2_year[:N_dates1,i,3],
+					facecolor='coral', alpha=0.3)
+				ax.fill_between(dates2, data_R2_year[N_dates1:,i,2], data_R2_year[N_dates1:,i,3],
+					facecolor='coral', alpha=0.3)
+				ax.set_ylim([0, 1])
+				ax.set_ylabel(r'$R^{2}$')
+				ax.xaxis.set_major_formatter(mdates.DateFormatter('%y'))
+				plt.grid(True)
+				save_name = dirs + "R2_area_" + str(i) + "_" + month + ".png"
+				plt.savefig(save_name, dpi=300)
+				plt.close()
 
-		for area_index in [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17]:
-			data_A_all_year = []
-			data_theta_all_year = []
-			data_R2_all_year = []
-			data_e2_all_year = []
-			for year in y_list:
-				for month in month_list:
-					print(year + month)
-					file_list = "../data/csv_Helmert_both_30_netcdf4/Helmert_both_30_netcdf4_20" + year + month + ".csv"
-					df = pd.read_csv(file_list)
-					df.loc[df.R2<0.36, ["A", "theta", "epsilon2"]] = np.nan
+				fig, ax = plt.subplots(1, 1)
+				fig.figsize=(6, 4)
+				ax.plot(dates1, data_e2_year[:N_dates1,i,1], '-', color="k")
+				ax.plot(dates2, data_e2_year[N_dates1:,i,1], '-', color="k")
+				e2_by_year = data_by_year.loc[(i), ("epsilon2", "mean")]
+				ax.plot([dates1[0], dates1[-1]], [e2_by_year, e2_by_year], "coral", linestyle='dashed')
+				ax.plot([dates2[0], dates2[-1]], [e2_by_year, e2_by_year], "coral", linestyle='dashed')
+				ax.fill_between(dates1, data_e2_year[:N_dates1,i,2], data_e2_year[:N_dates1,i,3],
+					facecolor='silver', alpha=0.3)
+				ax.fill_between(dates2, data_e2_year[N_dates1:,i,2], data_e2_year[N_dates1:,i,3],
+					facecolor='silver', alpha=0.3)
+				ax.set_ylim([0, 1.5])
+				ax.set_ylabel(r'$e^{2}$')
+				ax.xaxis.set_major_formatter(mdates.DateFormatter('%y'))
+				plt.grid(True)
+				save_name = dirs + "e2_area_" + str(i) + "_" + month + ".png"
+				plt.savefig(save_name, dpi=300)
+				plt.close()
 
-					data_A = df.groupby("area_label")["A"].describe()
-					data_A.loc[data_A[("count")]<=5, ("mean")] = np.nan
-					data_A_all_year.append(data_A.loc[(area_index), "mean"])
-
-					data_theta = df.groupby("area_label")["theta"].describe()
-					data_theta.loc[data_theta[("count")]<=5, ("mean")] = np.nan
-					data_theta_all_year.append(data_theta.loc[(area_index), "mean"])
-
-					data_e2 = df.groupby("area_label")["epsilon2"].describe()
-					data_e2.loc[data_e2[("count")]<=5, ("mean")] = np.nan
-					data_e2_all_year.append(data_e2.loc[(area_index), "mean"])
-
-					data_R2 = df.groupby("area_label")["R2"].describe()
-					data_R2.loc[data_R2[("count")]<=5, ("mean")] = np.nan
-					data_R2_all_year.append(data_R2.loc[(area_index), "mean"])
-			
-			dates1 = pd.date_range("2003", "2011", freq='MS')[:-1]
-			dates2 = pd.date_range("2013", "2017", freq='MS')[:-1]
-			fig, ax = plt.subplots(1, 1)
-			fig.figsize=(12, 9)
-			ax.plot(dates1, data_A_all_year[:len(dates1)], '-', color="k")
-			ax.plot(dates2, data_A_all_year[len(dates1):], '-', color="k")
-			ax.set_ylim([0, 0.025])
-			ax.set_ylabel('A')
-			for item in date_1_6:
-				ax.axvline(item, color='coral', linestyle='-', lw=0.75, alpha=0.75)
-			ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y%m'))
-			plt.grid(True)
-			plt.savefig(dirs + "A_no_std_area_" + str(area_index) + ".png")
-			plt.close()
-
-			fig, ax = plt.subplots(1, 1)
-			fig.figsize=(12, 9)
-			ax.plot(dates1, data_theta_all_year[:len(dates1)], '-', color="k")
-			ax.plot(dates2, data_theta_all_year[len(dates1):], '-', color="k")
-			ax.set_ylim([-90,90])
-			ax.set_ylabel(r'$\theta$')
-			for item in date_1_6:
-				ax.axvline(item, color='coral', linestyle='-', lw=0.75, alpha=0.75)
-			ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y%m'))
-			plt.grid(True)
-			plt.savefig(dirs + "theta_no_std_area_" + str(area_index) + ".png")
-			plt.close()
-
-			fig, ax = plt.subplots(1, 1)
-			fig.figsize=(12, 9)
-			ax.plot(dates1, data_e2_all_year[:len(dates1)], '-', color="k")
-			ax.plot(dates2, data_e2_all_year[len(dates1):], '-', color="k")
-			ax.set_ylim([0, 1.3])
-			ax.set_ylabel(r'$e^{2}$')
-			for item in date_1_6:
-				ax.axvline(item, color='coral', linestyle='-', lw=0.75, alpha=0.75)
-			ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y%m'))
-			plt.grid(True)
-			plt.savefig(dirs + "e2_no_std_area_" + str(area_index) + ".png")
-			plt.close()
-
-			fig, ax = plt.subplots(1, 1)
-			fig.figsize=(12, 9)
-			ax.plot(dates1, data_R2_all_year[:len(dates1)], '-', color="k")
-			ax.plot(dates2, data_R2_all_year[len(dates1):], '-', color="k")
-			ax.set_ylim([0, 1])
-			ax.set_ylabel(r'$R^{2}$')
-			for item in date_1_6:
-				ax.axvline(item, color='coral', linestyle='-', lw=0.75, alpha=0.75)
-			ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y%m'))
-			plt.grid(True)
-			plt.savefig(dirs + "R2_no_std_area_" + str(area_index) + ".png")
-			plt.close()
+				fig, ax = plt.subplots(1, 1)
+				fig.figsize=(6, 4)
+				y1 = data_A_year[:N_dates1,i,0]
+				y2 = data_A_year[N_dates1:,i,0]
+				ax.plot(dates1, y1, '-', color="k")
+				ax.plot(dates2, y2, '-', color="k")
+				y_lim_min = max(y1.min()-5,0)
+				y_lim_max = y1.max()+5
+				ax.set_ylim([y_lim_min, y_lim_max])
+				ax.set_ylabel("number of data")
+				ax.xaxis.set_major_formatter(mdates.DateFormatter('%y'))
+				plt.grid(True)
+				save_name = dirs + "count_area_" + str(i) + "_" + month + ".png"
+				plt.savefig(save_name, dpi=300)
+				plt.close()
 
 	dirs_ts_30_by_year = "../result_nc/ts_30_by_year/"
 	dirs_ts_by_month = "../result_nc/ts_by_month/"
-	dirs_ts_by_month_all_year = "../result_nc/ts_by_month_all_year/"
 	if num == 1:
 		ts_30_by_month(dirs_ts_by_month)
 	elif num == 2:
 		ts_30_by_year(dirs_ts_30_by_year)
-	elif num == 3:
-		ts_by_month_all_year(dirs_ts_by_month_all_year)
 
-#plot_nc_data_ts(1)
-#plot_nc_data_ts(2)
-#plot_nc_data_ts(3)
+plot_nc_data_ts_no_15_16(1)
+plot_nc_data_ts_no_15_16(2)
+
 
 
 
@@ -669,9 +712,10 @@ def plot_nc_data_corr():
 	dirs_corr_map = "../result_nc/corr_map/"
 	dirs_corr_map_search_grid = "../result_nc/corr_map_search_grid/"
 
-
-	if not os.path.exists(dirs):
-		os.makedirs(dirs)
+	if not os.path.exists(dirs_corr_map):
+		os.makedirs(dirs_corr_map)
+	if not os.path.exists(dirs_corr_map_search_grid):
+		os.makedirs(dirs_corr_map_search_grid)
 
 	data_ex_dir = "../data/csv_Helmert_ex/Helmert_ex_200301.csv"
 	data_ex = pd.read_csv(data_ex_dir)
@@ -706,7 +750,7 @@ def plot_nc_data_corr():
 		save_name_corr = dirs_corr_map + "ic0_A_" + month + ".png"
 		visualize.plot_map_once(corr_list, data_type="type_non_wind", show=False, 
 			save_name=save_name_corr, vmax=1, vmin=-1, cmap=plt.cm.jet)
-
+		"""
 		df_corr = pd.DataFrame({"corr": corr_list})
 		df_corr = pd.concat([latlon_ex, df_corr, data_ex.loc[:, ["coastal_region_1", "coastal_region_2", "area_label"]]], axis=1)
 		corr_grid_pos = df_corr.loc[(df_corr["corr"]>=0.7)&(df_corr["area_label"].isin([0,1,4,5,7,8,10,12,16])), :].dropna().index
@@ -748,7 +792,9 @@ def plot_nc_data_corr():
 			plt.annotate(str(grid), xy=(x[grid], y[grid]), xycoords='data', xytext=(x[grid], y[grid]), textcoords='data', color='b')
 		plt.savefig(dirs_corr_map_search_grid + "ic0_A_grid_info_" + month + ".png", dpi=300)
 		plt.close()
+		"""
 
+#plot_nc_data_corr()
 
 
 
@@ -836,6 +882,267 @@ def print_nc_data():
 
 
 
+
+def plot_ts(num):
+	def ts_30_by_month(dirs):
+		if not os.path.exists(dirs):
+			os.makedirs(dirs)
+
+		data_A_year_list = []
+		data_theta_year_list = []
+		data_R2_year_list = []
+		data_e2_year_list = []
+		for year in y_list:
+			data_A_month, data_theta_month, data_R2_month, data_e2_month = [], [], [], []
+			for month in month_list:
+				print(year + month)
+				file_list = "../data/csv_Helmert_both_30/Helmert_both_30_20" + year + month + ".csv"
+				df = pd.read_csv(file_list)
+				data = df.groupby("area_label")[["A", "theta", "R2", "epsilon2"]].describe()
+
+				data_A = data.loc[:, ("A", ["mean", "count"])].values
+				data_theta = data.loc[:, ("theta", ["mean", "count"])].values
+				data_R2 = data.loc[:, ("R2", ["mean", "count"])].values
+				data_e2 = data.loc[:, ("epsilon2", ["mean", "count"])].values
+				data_A_month.append(data_A)
+				data_theta_month.append(data_theta)
+				data_R2_month.append(data_R2)
+				data_e2_month.append(data_e2)
+
+			data_A_month = np.array(data_A_month)
+			data_theta_month = np.array(data_theta_month)
+			data_R2_month = np.array(data_R2_month)
+			data_e2_month = np.array(data_e2_month)
+
+			data_A_year_list.append(data_A_month)
+			data_theta_year_list.append(data_theta_month)
+			data_R2_year_list.append(data_R2_month)
+			data_e2_year_list.append(data_e2_month)
+
+		len_y = len(y_list)
+		for i in range(18):
+			dates = pd.date_range("2001", periods=12, freq='MS')
+
+			fig, ax = plt.subplots(1, 1)
+			fig.figsize=(15, 6)
+			for j in range(len_y):
+				ax.plot(dates, data_A_year_list[j][:,i,1], '-', label = "20" + y_list[j])
+			#ax.legend(loc="center", bbox_to_anchor=(1.1, 0.5))
+			ax.legend(bbox_to_anchor=(1.08, 0.8))
+			plt.subplots_adjust(right=0.75)
+			ax.set_ylim([0, 0.015])
+			ax.set_ylabel('A')
+			ax.xaxis.set_major_formatter(mdates.DateFormatter('%m'))
+			plt.grid(True)
+			plt.savefig(dirs + "A_area_" + str(i) + ".png", dpi=150)
+			plt.close()
+
+			fig, ax = plt.subplots(1, 1)
+			fig.figsize=(15, 6)
+			for j in range(len_y):
+				ax.plot(dates, data_theta_year_list[j][:,i,1], '-', label = "20" + y_list[j])
+			ax.legend(bbox_to_anchor=(1.08, 0.8))
+			plt.subplots_adjust(right=0.75)
+			ax.set_ylim([-60, 60])
+			ax.set_ylabel(r'$\theta$')
+			ax.xaxis.set_major_formatter(mdates.DateFormatter('%m'))
+			plt.grid(True)
+			plt.savefig(dirs + "theta_area_" + str(i) + ".png", dpi=150)
+			plt.close()
+
+			fig, ax = plt.subplots(1, 1)
+			fig.figsize=(15, 6)
+			for j in range(len_y):
+				ax.plot(dates, data_R2_year_list[j][:,i,1], '-', label = "20" + y_list[j])
+			ax.legend(bbox_to_anchor=(1.08, 0.8))
+			plt.subplots_adjust(right=0.75)
+			ax.set_ylim([0, 0.7])
+			ax.set_ylabel(r'$R^{2}$')
+			ax.xaxis.set_major_formatter(mdates.DateFormatter('%m'))
+			plt.grid(True)
+			plt.savefig(dirs + "R2_area_" + str(i) + ".png", dpi=150)
+			plt.close()
+
+			fig, ax = plt.subplots(1, 1)
+			fig.figsize=(15, 6)
+			for j in range(len_y):
+				ax.plot(dates, data_e2_year_list[j][:,i,1], '-', label = "20" + y_list[j])
+			ax.legend(bbox_to_anchor=(1.08, 0.8))
+			plt.subplots_adjust(right=0.75)
+			ax.set_ylim([0, 1.5])
+			ax.set_ylabel(r'$e^{2}$')
+			ax.xaxis.set_major_formatter(mdates.DateFormatter('%m'))
+			plt.grid(True)
+			plt.savefig(dirs + "e2_area_" + str(i) + ".png", dpi=150)
+			plt.close()
+
+			fig, ax = plt.subplots(1, 1)
+			fig.figsize=(15, 6)
+			for j in range(len_y):
+				y = data_A_year_list[j][:,i,0]
+				ax.plot(dates, y, '-', label = "20" + y_list[j])
+			ax.legend(bbox_to_anchor=(1.08, 0.8))
+			plt.subplots_adjust(right=0.75)
+			ax.set_ylabel("number of data")
+			ax.xaxis.set_major_formatter(mdates.DateFormatter('%m'))
+			plt.grid(True)
+			plt.savefig(dirs + "count_area_" + str(i) + ".png", dpi=150)
+			plt.close()
+
+	def ts_30_by_year(dirs):
+		if not os.path.exists(dirs):
+			os.makedirs(dirs)
+
+		for month in month_list:
+		#for month in ["07", "08", "09", "10", "11", "12"]:
+			print("*************** " + month + " ***************")
+			data_A_year, data_theta_year, data_R2_year, data_e2_year = [], [], [], []
+			for year in y_list:
+				file_list = "../data/csv_Helmert_both_30/Helmert_both_30_20" + year + month + ".csv"
+				df = pd.read_csv(file_list)
+				data = df.groupby("area_label")[["A", "theta", "R2", "epsilon2"]].describe()
+
+				for item in ["A", "theta", "R2", "epsilon2"]:
+					data.loc[:, (item, "1sigma_pos")] = data.loc[:, (item, "mean")] + data.loc[:, (item, "std")]
+					data.loc[:, (item, "1sigma_neg")] = data.loc[:, (item, "mean")] - data.loc[:, (item, "std")]
+
+				data_A = data.loc[:, ("A", ["mean", "1sigma_pos", "1sigma_neg", "count"])].values
+				data_theta = data.loc[:, ("theta", ["mean", "1sigma_pos", "1sigma_neg", "count"])].values
+				data_R2 = data.loc[:, ("R2", ["mean", "1sigma_pos", "1sigma_neg", "count"])].values
+				data_e2 = data.loc[:, ("epsilon2", ["mean", "1sigma_pos", "1sigma_neg", "count"])].values
+
+				data_A_year.append(data_A)
+				data_theta_year.append(data_theta)
+				data_R2_year.append(data_R2)
+				data_e2_year.append(data_e2)
+
+			data_A_year = np.array(data_A_year)
+			data_theta_year = np.array(data_theta_year)
+			data_R2_year = np.array(data_R2_year)
+			data_e2_year = np.array(data_e2_year)
+
+			file_by_year = "../data/csv_Helmert_by_year/Helmert_by_year_" + month + ".csv"
+			data_by_year = pd.read_csv(file_by_year)
+			data_by_year = pd.concat([data_by_year, df["area_label"]], axis=1).groupby("area_label")[["A", "theta", "R2", "epsilon2"]].describe()
+
+			dates1 = pd.date_range("2003", "2011", freq='YS')[:-1]
+			dates2 = pd.date_range("2013", "2017", freq='YS')[:-1]
+			N_dates1 = len(dates1)
+
+			for i in range(18):
+				print("\tarea: {}".format(i))
+
+				fig, ax = plt.subplots(1, 1)
+				fig.figsize=(6, 4)
+				ax.plot(dates1, data_A_year[:N_dates1,i,1], '-', color="k")
+				ax.plot(dates2, data_A_year[N_dates1:,i,1], '-', color="k")
+				A_by_year = data_by_year.loc[(i), ("A", "mean")]
+				ax.plot([dates1[0], dates1[-1]], [A_by_year, A_by_year], "coral", linestyle='dashed')
+				ax.plot([dates2[0], dates2[-1]], [A_by_year, A_by_year], "coral", linestyle='dashed')
+				ax.fill_between(dates1, data_A_year[:N_dates1,i,2], data_A_year[:N_dates1,i,3],
+					facecolor='green', alpha=0.3)
+				ax.fill_between(dates2, data_A_year[N_dates1:,i,2], data_A_year[N_dates1:,i,3],
+					facecolor='green', alpha=0.3)
+				ax.set_ylim([0, 0.015])
+				ax.set_ylabel('A')
+				try:
+					ax.xaxis.set_major_formatter(mdates.DateFormatter('%y'))
+				except:
+					print(data_A_year[:,i,1])
+					print("skipping the for loop...  1")
+					continue
+				plt.grid(True)
+				save_name = dirs + "A_area_" + str(i) + "_" + month + ".png"
+				try:
+					plt.savefig(save_name, dpi=300)
+				except:
+					print(data_A_year[:,i,1])
+					print("skipping the for loop...  2")
+					continue
+				plt.close()
+
+				fig, ax = plt.subplots(1, 1)
+				fig.figsize=(6, 4)
+				ax.plot(dates1, data_theta_year[:N_dates1,i,1], '-', color="k")
+				ax.plot(dates2, data_theta_year[N_dates1:,i,1], '-', color="k")
+				theta_by_year = data_by_year.loc[(i), ("theta", "mean")]
+				ax.plot([dates1[0], dates1[-1]], [theta_by_year, theta_by_year], "coral", linestyle='dashed')
+				ax.plot([dates2[0], dates2[-1]], [theta_by_year, theta_by_year], "coral", linestyle='dashed')
+				ax.fill_between(dates1, data_theta_year[:N_dates1,i,2], data_theta_year[:N_dates1,i,3],
+					facecolor='lightskyblue', alpha=0.3)
+				ax.fill_between(dates2, data_theta_year[N_dates1:,i,2], data_theta_year[N_dates1:,i,3],
+					facecolor='lightskyblue', alpha=0.3)
+				ax.set_ylim([-60, 60])
+				ax.set_ylabel(r'$\theta$')
+				ax.xaxis.set_major_formatter(mdates.DateFormatter('%y'))
+				plt.grid(True)
+				save_name = dirs + "theta_area_" + str(i) + "_" + month + ".png"
+				plt.savefig(save_name, dpi=300)
+				plt.close()
+
+				fig, ax = plt.subplots(1, 1)
+				fig.figsize=(6, 4)
+				ax.plot(dates1, data_R2_year[:N_dates1,i,1], '-', color="k")
+				ax.plot(dates2, data_R2_year[N_dates1:,i,1], '-', color="k")
+				R2_by_year = data_by_year.loc[(i), ("R2", "mean")]
+				ax.plot([dates1[0], dates1[-1]], [R2_by_year, R2_by_year], "coral", linestyle='dashed')
+				ax.plot([dates2[0], dates2[-1]], [R2_by_year, R2_by_year], "coral", linestyle='dashed')
+				ax.fill_between(dates1, data_R2_year[:N_dates1,i,2], data_R2_year[:N_dates1,i,3],
+					facecolor='coral', alpha=0.3)
+				ax.fill_between(dates2, data_R2_year[N_dates1:,i,2], data_R2_year[N_dates1:,i,3],
+					facecolor='coral', alpha=0.3)
+				ax.set_ylim([0, 1])
+				ax.set_ylabel(r'$R^{2}$')
+				ax.xaxis.set_major_formatter(mdates.DateFormatter('%y'))
+				plt.grid(True)
+				save_name = dirs + "R2_area_" + str(i) + "_" + month + ".png"
+				plt.savefig(save_name, dpi=300)
+				plt.close()
+
+				fig, ax = plt.subplots(1, 1)
+				fig.figsize=(6, 4)
+				ax.plot(dates1, data_e2_year[:N_dates1,i,1], '-', color="k")
+				ax.plot(dates2, data_e2_year[N_dates1:,i,1], '-', color="k")
+				e2_by_year = data_by_year.loc[(i), ("epsilon2", "mean")]
+				ax.plot([dates1[0], dates1[-1]], [e2_by_year, e2_by_year], "coral", linestyle='dashed')
+				ax.plot([dates2[0], dates2[-1]], [e2_by_year, e2_by_year], "coral", linestyle='dashed')
+				ax.fill_between(dates1, data_e2_year[:N_dates1,i,2], data_e2_year[:N_dates1,i,3],
+					facecolor='silver', alpha=0.3)
+				ax.fill_between(dates2, data_e2_year[N_dates1:,i,2], data_e2_year[N_dates1:,i,3],
+					facecolor='silver', alpha=0.3)
+				ax.set_ylim([0, 1.5])
+				ax.set_ylabel(r'$e^{2}$')
+				ax.xaxis.set_major_formatter(mdates.DateFormatter('%y'))
+				plt.grid(True)
+				save_name = dirs + "e2_area_" + str(i) + "_" + month + ".png"
+				plt.savefig(save_name, dpi=300)
+				plt.close()
+
+				fig, ax = plt.subplots(1, 1)
+				fig.figsize=(6, 4)
+				y1 = data_A_year[:N_dates1,i,0]
+				y2 = data_A_year[N_dates1:,i,0]
+				ax.plot(dates1, y1, '-', color="k")
+				ax.plot(dates2, y2, '-', color="k")
+				y_lim_min = max(y1.min()-5,0)
+				y_lim_max = y1.max()+5
+				ax.set_ylim([y_lim_min, y_lim_max])
+				ax.set_ylabel("number of data")
+				ax.xaxis.set_major_formatter(mdates.DateFormatter('%y'))
+				plt.grid(True)
+				save_name = dirs + "count_area_" + str(i) + "_" + month + ".png"
+				plt.savefig(save_name, dpi=300)
+				plt.close()
+
+	dirs_ts_30_by_year = "../result_thesis_h/ts_30_by_year/"
+	dirs_ts_by_month = "../result_thesis_h/ts_by_month/"
+	if num == 1:
+		ts_30_by_month(dirs_ts_by_month)
+	elif num == 2:
+		ts_30_by_year(dirs_ts_30_by_year)
+
+#plot_ts(1)
+#plot_ts(2)
 
 
 

@@ -46,7 +46,7 @@ def plot_map_once(data, **kwargs):
 	cmap = kwargs["cmap"]
 
 	m = Basemap(lon_0=180, boundinglat=50, resolution='l', projection='npstere')
-	fig = plt.figure(figsize=(6.5, 6.5))
+	#fig = plt.figure(figsize=(6.5, 6.5))
 	m.drawcoastlines(color = '0.15')
 	m.fillcontinents(color='#555555')
 
@@ -96,7 +96,8 @@ def plot_map_once(data, **kwargs):
 	if show == True:
 		plt.show()
 	if save_name is not None:
-		plt.savefig(save_name, dpi=450)
+		plt.tight_layout()
+		plt.savefig(save_name, dpi=150)
 	plt.close()
 
 
@@ -109,7 +110,7 @@ def plot_map_multi(data_wind, data_non_wind, **kwargs):
 	cmap = kwargs["cmap"]
 
 	m = Basemap(lon_0=180, boundinglat=50, resolution='i', projection='npstere')
-	fig = plt.figure(figsize=(6.5, 6.5))
+	#fig = plt.figure(figsize=(6.5, 6.5))
 	m.drawcoastlines(color = '0.15')
 	m.fillcontinents(color='#555555')
 
@@ -152,7 +153,7 @@ def plot_map_multi(data_wind, data_non_wind, **kwargs):
 	if show == True:
 		plt.show()
 	if save_name is not None:
-		plt.savefig(save_name, dpi=900)
+		plt.savefig(save_name, dpi=150)
 	plt.close()
 
 
@@ -169,7 +170,7 @@ def plot_900(file_name, save_name, show):
 	y_lat = latlon[:,1]
 	
 	m = Basemap(lon_0=180, boundinglat=40, resolution='i', projection='npstere')
-	fig = plt.figure(figsize=(6.5,6.5))
+	#fig = plt.figure(figsize=(6.5,6.5))
 
 	xx = np.reshape(x_lon, (900,900))
 	yy = np.reshape(y_lat, (900,900))
@@ -181,7 +182,7 @@ def plot_900(file_name, save_name, show):
 	if show == True:
 		plt.show()
 	if save_name is not None:
-		plt.savefig(save_name, dpi=900)
+		plt.savefig(save_name, dpi=150)
 	plt.close()
 
 #############################################################################################
