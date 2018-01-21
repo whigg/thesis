@@ -1,7 +1,6 @@
 """
-地衡風の1日ずらした風力係数の計算，プロット(map, 時系列)
+地上10m風の1日ずらした風力係数の計算，プロット(map, 時系列)
 """
-
 from mpl_toolkits.basemap import Basemap
 import numpy as np
 import pandas as pd
@@ -55,80 +54,76 @@ cm_angle_2 = visualize.generate_cmap([
 
 ###############################################################################################################
 
-def get_non_sensor_index():
-	ic0_file_name = "../data/csv_ic0/IC0_20030101.csv"
-	data = calc_data.get_1day_ic0_data(ic0_file_name)
-	data = pd.concat([latlon_ex, data], axis=1)
-	lonlat_idx = np.array(data.loc[(data.Lat>=80)&(data.ic0_145.isnull()), ["Lon", "Lat"]].index)
-	rst = np.zeros(145**2)
-	rst[lonlat_idx] = 1
-	np.savetxt("../data/non_sensor_index.csv", rst, delimiter=",")
-	"""
-	lonlat_idx = data.loc[(data.Lat>=80)&(data.ic0_145.isnull()), ["Lon", "Lat"]]
-
-	m = Basemap(lon_0=180, boundinglat=50, resolution='l', projection='npstere')
-	#fig = plt.figure(figsize=(6.5, 6.5))
-	m.drawcoastlines(color = '0.15')
-	m.fillcontinents(color='#555555')
-	x, y = m(np.array(lonlat_idx["Lon"]), np.array(lonlat_idx["Lat"]))
-	m.scatter(x, y, marker='o', color = "b", s=1.2, alpha=0.9)
-	plt.show()
-	"""
-
-#get_non_sensor_index()
-
-
-
-###############################################################################################################
-
-def get_helmert_30_1day_delay():
-	dirs = "../data/csv_Helmert_30_1day_delay/"
+def get_helmert_30_nc_1day_delay():
+	dirs = "../data/csv_Helmert_30_netcdf4_1day_delay/"
 	if not os.path.exists(dirs):
 		os.makedirs(dirs)
 
 	y_list = ["03", "04", "05", "06", "07", "08", "09", "10", "13", "14", "15", "16"]
 	month_list = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"]
+	grid_data = pd.read_csv(grid900to145_file_name, header=None)
+	grid145 = np.array(grid_data, dtype='int64').ravel()
 	for year in y_list:
 		for month in month_list:
 			print("******************** {} ***************".format(year + month))
-			gw_file_list = sorted(glob.glob("../data/csv_w/ecm" + year + month + "*.csv"))
-			del gw_file_list[0]
-			if month != "12":
-				next_year = year
+			if month in ["04", "06", "09", "11"]:
+				L = 30
+			elif month == "02":
+				if year in ["04", "08", "16"]:
+					L = 29
+				else:
+					L = 28
 			else:
+				L = 31
+			start_0101 = date(int("20"+year), 1, 1)
+			start_date = date(int("20"+year), int(month), 1)
+			start_from_0101_idx = (start_date-start_0101).days
+			#print(start_0101, start_date, start_from_0101_idx)
+			if month != "12":
+				nc_fname = "../data/netcdf4/interim_2mt_10u_10v_20" + year + "0101-20" + year + "1231.nc"
+				_, result_u10, result_v10 = calc_data.get_1month_netcdf4_data(nc_fname)
+				w10_u_array = result_u10[start_from_0101_idx+1:start_from_0101_idx+L+1, :]
+				w10_v_array = result_v10[start_from_0101_idx+1:start_from_0101_idx+L+1, :]
+			else:
+				nc_fname_1 = "../data/netcdf4/interim_2mt_10u_10v_20" + year + "0101-20" + year + "1231.nc"
+				_, result_u10, result_v10 = calc_data.get_1month_netcdf4_data(nc_fname_1)
+				w10_u_array_1 = result_u10[start_from_0101_idx+1:start_from_0101_idx+L, :]
+				w10_v_array_1 = result_v10[start_from_0101_idx+1:start_from_0101_idx+L, :]
 				next_year = str(int(year)+1)
 				if len(next_year) == 1:
 					next_year = "0" + next_year
-			gw_file_list.append("../data/csv_w/ecm" + next_year + month_list[(int(month)+1)%12-1] + "01.csv")
-			iw_file_list = sorted(glob.glob("../data/csv_iw/" + year + month + "*.csv"))
-			#del iw_file_list[0]
-			#iw_file_list.append("../data/csv_iw/" + str(int(year)+1) + month_list[(int(month)+1)%12-1] + "01.csv")
-			
-			ic0_file_list = sorted(glob.glob("../data/csv_ic0/IC0_20" + year + month + "*.csv"))
-			sit_file_list = sorted(glob.glob("../data/csv_sit/SIT_20" + year + month + "*.csv"))
-			gw_list = []
-			iw_list = []
-			ic0_list = []
-			sit_list = []
+				nc_fname_2 = "../data/netcdf4/interim_2mt_10u_10v_20" + next_year + "0101-20" + next_year + "1231.nc"
+				if year == "16":
+					nc_fname_2 = "../data/netcdf4/interim_2mt_10u_10v_20" + next_year + "0101-20" + next_year + "0930.nc"
+				_, result_u10, result_v10 = calc_data.get_1month_netcdf4_data(nc_fname_2)
+				w10_u_array_2 = result_u10[0, :].reshape((1, -1))
+				w10_v_array_2 = result_v10[0, :].reshape((1, -1))
+				w10_u_array = np.vtack((w10_u_array_1, w10_u_array_2))
+				w10_v_array = np.vtack((w10_v_array_1, w10_v_array_2))
+			w10_uv = []
+			for day_idx in range(L):
+				tmp_1 = w10_u_array[day_idx, :].reshape((-1,1))
+				tmp_2 = w10_v_array[day_idx, :].reshape((-1,1))
+				w10_uv.append(np.hstack((tmp_1, tmp_2)))
+			w10_uv = np.array(w10_uv)
 
-			L_gw = len(gw_file_list)
+			iw_file_list = sorted(glob.glob("../data/csv_iw/" + year + month + "*.csv"))
+			iw_list = []
 			L_iw = len(iw_file_list)
-			if L_gw != L_iw:
-				print("L_gw != L_iw")
-				continue
-			grid_data = pd.read_csv(grid900to145_file_name, header=None)
-			grid145 = np.array(grid_data, dtype='int64').ravel()
-			for gw_fname in gw_file_list:
-				print("\t{}".format(gw_fname))
-				df_wind = pd.read_csv(gw_fname, header=None)
-				wind = np.array(df_wind, dtype='float32')
-				gw_list.append(wind[:, [0,1]])
 			for iw_fname in iw_file_list:
 				print("\t{}".format(iw_fname))
 				df_ice_wind = pd.read_csv(iw_fname, header=None)
 				df_ice_wind[df_ice_wind==999.] = np.nan
 				ice_wind = np.array(df_ice_wind, dtype='float32')/100
 				iw_list.append(ice_wind[:, [0,1]])
+			iw_array = np.array(iw_list)
+
+			gw_array = np.where(np.isnan(iw_array), np.nan, w10_uv)
+
+			ic0_file_list = sorted(glob.glob("../data/csv_ic0/IC0_20" + year + month + "*.csv"))
+			sit_file_list = sorted(glob.glob("../data/csv_sit/SIT_20" + year + month + "*.csv"))
+			ic0_list = []
+			sit_list = []
 			for ic0_fname in ic0_file_list:
 				print("\t{}".format(ic0_fname))
 				ic0_data = pd.read_csv(ic0_fname, header=None)
@@ -142,12 +137,6 @@ def get_helmert_30_1day_delay():
 				sit[sit>=10001] = np.nan
 				sit_145 = sit[grid145]
 				sit_list.append(sit_145)
-
-			gw_array = np.array(gw_list)
-			iw_array = np.array(iw_list)
-			ic0_array = np.array(ic0_list)
-			sit_array = np.array(sit_list)
-			gw_array = np.where(np.isnan(iw_array), np.nan, gw_array)
 
 			gw_ave = np.nanmean(gw_array, axis=0)
 			iw_ave = np.nanmean(iw_array, axis=0)
@@ -197,17 +186,19 @@ def get_helmert_30_1day_delay():
 			data = pd.concat([latlon_ex, data, data_ex.loc[:, ["coastal_region_1", "coastal_region_2", "area_label"]]], axis=1)
 			data.loc[(data.Lat>=80)&(data.ic0_30.isnull()), ["A", "theta", "ocean_u", "ocean_v", "R2", "epsilon2", "mean_iw_u", "mean_iw_v"]] = np.nan
 
-			save_name = dirs + "Helmert_30_1day_delay_20" + year + month + ".csv"
+			save_name = dirs + "Helmert_30_netcdf4_1day_delay_20" + year + month + ".csv"
 			print(save_name)
 			data.to_csv(save_name, index=False)
 
-#get_helmert_30_1day_delay()
+
+#get_helmert_30_nc_1day_delay()
 
 
 
 
-def get_helmert_90_1day_delay():
-	dirs = "../data/csv_Helmert_90_1day_delay/"
+
+def get_helmert_90_1day_delay_csv():
+	dirs = "../data/csv_Helmert_90_netcdf4_1day_delay/"
 	if not os.path.exists(dirs):
 		os.makedirs(dirs)
 
@@ -216,42 +207,62 @@ def get_helmert_90_1day_delay():
 
 	y_list = ["03", "04", "05", "06", "07", "08", "09", "10", "13", "14", "15", "16"]
 	m_list = [["01", "02", "03"], ["04", "05", "06"], ["07", "08", "09"], ["10", "11", "12"]]
+	grid_data = pd.read_csv(grid900to145_file_name, header=None)
+	grid145 = np.array(grid_data, dtype='int64').ravel()
 	for year in y_list:
 		for im, m3 in enumerate(m_list):
 			print("******************** {}, {} ***************".format(year, m3))
-			gw_file_list = sorted(glob.glob("../data/csv_w/ecm" + year + m3[0] + "*.csv") + \
-				glob.glob("../data/csv_w/ecm" + year + m3[1] + "*.csv") + \
-				glob.glob("../data/csv_w/ecm" + year + m3[2] + "*.csv"))
-			del gw_file_list[0]
+			def get_month_len(year, month):
+				if month in ["04", "06", "09", "11"]:
+					L1 = 30
+				elif month == "02":
+					if year in ["04", "08", "16"]:
+						L1 = 29
+					else:
+						L1 = 28
+				else:
+					L1 = 31
+				return (L1)
+
+			L = get_month_len(year, m3[0]) + get_month_len(year, m3[1]) + get_month_len(year, m3[2])
+			start_0101 = date(int("20"+year), 1, 1)
+			start_date = date(int("20"+year), int(month), 1)
+			start_from_0101_idx = (start_date-start_0101).days
+			#print(start_0101, start_date, start_from_0101_idx)
 			if m3[2] != "12":
-				next_year = year
-				next_month = str(int(m3[2])+1)
-				if len(next_month) == 1:
-					next_month = "0" + next_month
+				nc_fname = "../data/netcdf4/interim_2mt_10u_10v_20" + year + "0101-20" + year + "1231.nc"
+				_, result_u10, result_v10 = calc_data.get_1month_netcdf4_data(nc_fname)
+				w10_u_array = result_u10[start_from_0101_idx+1:start_from_0101_idx+L+1, :]
+				w10_v_array = result_v10[start_from_0101_idx+1:start_from_0101_idx+L+1, :]
 			else:
+				nc_fname_1 = "../data/netcdf4/interim_2mt_10u_10v_20" + year + "0101-20" + year + "1231.nc"
+				_, result_u10, result_v10 = calc_data.get_1month_netcdf4_data(nc_fname_1)
+				w10_u_array_1 = result_u10[start_from_0101_idx+1:start_from_0101_idx+L, :]
+				w10_v_array_1 = result_v10[start_from_0101_idx+1:start_from_0101_idx+L, :]
 				next_year = str(int(year)+1)
 				if len(next_year) == 1:
 					next_year = "0" + next_year
-				next_month = "01"
-			gw_file_list.append("../data/csv_w/ecm" + next_year + next_month + "01.csv")
+				nc_fname_2 = "../data/netcdf4/interim_2mt_10u_10v_20" + next_year + "0101-20" + next_year + "1231.nc"
+				if year == "16":
+					nc_fname_2 = "../data/netcdf4/interim_2mt_10u_10v_20" + next_year + "0101-20" + next_year + "0930.nc"
+				_, result_u10, result_v10 = calc_data.get_1month_netcdf4_data(nc_fname_2)
+				w10_u_array_2 = result_u10[0, :].reshape((1, -1))
+				w10_v_array_2 = result_v10[0, :].reshape((1, -1))
+				w10_u_array = np.vtack((w10_u_array_1, w10_u_array_2))
+				w10_v_array = np.vtack((w10_v_array_1, w10_v_array_2))
+			w10_uv = []
+			for day_idx in range(L):
+				tmp_1 = w10_u_array[day_idx, :].reshape((-1,1))
+				tmp_2 = w10_v_array[day_idx, :].reshape((-1,1))
+				w10_uv.append(np.hstack((tmp_1, tmp_2)))
+			w10_uv = np.array(w10_uv)
+
 			iw_file_list = sorted(glob.glob("../data/csv_iw/" + year + m3[0] + "*.csv") + \
 				glob.glob("../data/csv_iw/" + year + m3[1] + "*.csv") + \
 				glob.glob("../data/csv_iw/" + year + m3[2] + "*.csv"))
 
-			gw_list = []
 			iw_list = []
-			L_gw = len(gw_file_list)
 			L_iw = len(iw_file_list)
-			if L_gw != L_iw:
-				print("L_gw != L_iw")
-				continue
-			grid_data = pd.read_csv(grid900to145_file_name, header=None)
-			grid145 = np.array(grid_data, dtype='int64').ravel()
-			for gw_fname in gw_file_list:
-				print("\t{}".format(gw_fname))
-				df_wind = pd.read_csv(gw_fname, header=None)
-				wind = np.array(df_wind, dtype='float32')
-				gw_list.append(wind[:, [0,1]])
 			for iw_fname in iw_file_list:
 				print("\t{}".format(iw_fname))
 				df_ice_wind = pd.read_csv(iw_fname, header=None)
@@ -259,9 +270,8 @@ def get_helmert_90_1day_delay():
 				ice_wind = np.array(df_ice_wind, dtype='float32')/100
 				iw_list.append(ice_wind[:, [0,1]])
 
-			gw_array = np.array(gw_list)
 			iw_array = np.array(iw_list)
-			gw_array = np.where(np.isnan(iw_array), np.nan, gw_array)
+			gw_array = np.where(np.isnan(iw_array), np.nan, w10_uv)
 
 			gw_ave = np.nanmean(gw_array, axis=0)
 			iw_ave = np.nanmean(iw_array, axis=0)
@@ -306,58 +316,77 @@ def get_helmert_90_1day_delay():
 			print(save_name)
 			data.to_csv(save_name, index=False)
 
-#get_helmert_90_1day_delay()
+#get_helmert_90_1day_delay_csv()
 
 
 
 
-
-def get_helmert_by_year_1day_delay():
-	dirs = "../data/csv_Helmert_by_year_1day_delay/"
+def get_helmert_by_year_netcdf4_1day_delay():
+	dirs = "../data/csv_Helmert_by_year_netcdf4_1day_delay/"
 	if not os.path.exists(dirs):
 		os.makedirs(dirs)
 
 	data_ex_dir = "../data/csv_Helmert_ex/Helmert_ex_200301.csv"
 	data_ex = pd.read_csv(data_ex_dir)
-
 	y_list = ["03", "04", "05", "06", "07", "08", "09", "10", "13", "14", "15", "16"]
 	month_list = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"]
+	grid_data = pd.read_csv(grid900to145_file_name, header=None)
+	grid145 = np.array(grid_data, dtype='int64').ravel()
 	for im, month in enumerate(month_list):
 		print("******************** {} ***************".format(month))
-		gw_file_list = []
+		gw_array = np.zeros((1, 145**2, 2))
 		iw_file_list = []
 		for iy, year in enumerate(y_list):
-			gw_tmp = glob.glob("../data/csv_w/ecm" + year + month + "*.csv")
-			del gw_tmp[0]
-			if month == "12":
-				next_month = "01"
+			def get_month_len(year, month):
+				if month in ["04", "06", "09", "11"]:
+					L1 = 30
+				elif month == "02":
+					if year in ["04", "08", "16"]:
+						L1 = 29
+					else:
+						L1 = 28
+				else:
+					L1 = 31
+				return (L1)
+
+			L = get_month_len(year, month)
+			start_0101 = date(int("20"+year), 1, 1)
+			start_date = date(int("20"+year), int(month), 1)
+			start_from_0101_idx = (start_date-start_0101).days
+
+			if month != "12":
+				nc_fname = "../data/netcdf4/interim_2mt_10u_10v_20" + year + "0101-20" + year + "1231.nc"
+				_, result_u10, result_v10 = calc_data.get_1month_netcdf4_data(nc_fname)
+				w10_u_array = result_u10[start_from_0101_idx+1:start_from_0101_idx+L+1, :]
+				w10_v_array = result_v10[start_from_0101_idx+1:start_from_0101_idx+L+1, :]
+			else:
+				nc_fname_1 = "../data/netcdf4/interim_2mt_10u_10v_20" + year + "0101-20" + year + "1231.nc"
+				_, result_u10, result_v10 = calc_data.get_1month_netcdf4_data(nc_fname_1)
+				w10_u_array_1 = result_u10[start_from_0101_idx+1:start_from_0101_idx+L, :]
+				w10_v_array_1 = result_v10[start_from_0101_idx+1:start_from_0101_idx+L, :]
 				next_year = str(int(year)+1)
 				if len(next_year) == 1:
 					next_year = "0" + next_year
-			else:
-				next_month = month_list[im+1]
-				next_year = year
-			tmp = "../data/csv_w/ecm" + next_year + next_month + "01.csv"
-			gw_tmp = gw_tmp + [tmp]
-			gw_file_list = gw_file_list + gw_tmp
-			iw_file_list = iw_file_list + glob.glob("../data/csv_iw/" + year + month + "*.csv")
-		#gw_file_list = sorted(gw_file_list)
-		iw_file_list = sorted(iw_file_list)
+				nc_fname_2 = "../data/netcdf4/interim_2mt_10u_10v_20" + next_year + "0101-20" + next_year + "1231.nc"
+				if year == "16":
+					nc_fname_2 = "../data/netcdf4/interim_2mt_10u_10v_20" + next_year + "0101-20" + next_year + "0930.nc"
+				_, result_u10, result_v10 = calc_data.get_1month_netcdf4_data(nc_fname_2)
+				w10_u_array_2 = result_u10[0, :].reshape((1, -1))
+				w10_v_array_2 = result_v10[0, :].reshape((1, -1))
+				w10_u_array = np.vtack((w10_u_array_1, w10_u_array_2))
+				w10_v_array = np.vtack((w10_v_array_1, w10_v_array_2))
+			w10_uv = []
+			for day_idx in range(L):
+				tmp_1 = w10_u_array[day_idx, :].reshape((-1,1))
+				tmp_2 = w10_v_array[day_idx, :].reshape((-1,1))
+				w10_uv.append(np.hstack((tmp_1, tmp_2)))
+			w10_uv = np.array(w10_uv)
+			gw_array = np.concatenate([gw_array, w10_uv], axis=0)
 
-		gw_list = []
+			iw_file_list = iw_file_list + glob.glob("../data/csv_iw/" + year + month + "*.csv")
+
+		iw_file_list = sorted(iw_file_list)
 		iw_list = []
-		L_gw = len(gw_file_list)
-		L_iw = len(iw_file_list)
-		if L_gw != L_iw:
-			print("L_gw != L_iw")
-			continue
-		grid_data = pd.read_csv(grid900to145_file_name, header=None)
-		grid145 = np.array(grid_data, dtype='int64').ravel()
-		for gw_fname in gw_file_list:
-			print("\t{}".format(gw_fname))
-			df_wind = pd.read_csv(gw_fname, header=None)
-			wind = np.array(df_wind, dtype='float32')
-			gw_list.append(wind[:, [0,1]])
 		for iw_fname in iw_file_list:
 			print("\t{}".format(iw_fname))
 			df_ice_wind = pd.read_csv(iw_fname, header=None)
@@ -365,7 +394,6 @@ def get_helmert_by_year_1day_delay():
 			ice_wind = np.array(df_ice_wind, dtype='float32')/100
 			iw_list.append(ice_wind[:, [0,1]])
 
-		gw_array = np.array(gw_list)
 		iw_array = np.array(iw_list)
 		gw_array = np.where(np.isnan(iw_array), np.nan, gw_array)
 
@@ -408,31 +436,31 @@ def get_helmert_by_year_1day_delay():
 		data.loc[data["non"]==1., ["A", "theta", "ocean_u", "ocean_v", "R2", "epsilon2", "mean_iw_u", "mean_iw_v"]] = np.nan
 		data.drop("non", axis=1)
 
-		save_name = dirs + "Helmert_by_year_1day_delay_" + month + ".csv"
+		save_name = dirs + "Helmert_by_year_netcdf4_1day_delay_" + month + ".csv"
 		print(save_name)
 		data.to_csv(save_name, index=False)
 
-#get_helmert_by_year_1day_delay()
+
+#get_helmert_by_year_netcdf4_1day_delay()
 
 
+###############################################################################################################
 
-##################################################################################################
+def plot_nc_data_map_1day_delay(num):
+	dirs_A_30 = "../result_nc_1day_delay/A/A_30/"
+	dirs_R2_30 = "../result_nc_1day_delay/R2/R2_30/"
+	dirs_theta_30 = "../result_nc_1day_delay/theta/theta_30/"
+	dirs_epsilon2_30 = "../result_nc_1day_delay/epsilon2/epsilon2_30/"
 
-def plot_data_map_1day_delay(num):
-	dirs_A_30 = "../result_h_1day_delay/A/A_30/"
-	dirs_R2_30 = "../result_h_1day_delay/R2/R2_30/"
-	dirs_theta_30 = "../result_h_1day_delay/theta/theta_30/"
-	dirs_epsilon2_30 = "../result_h_1day_delay/epsilon2/epsilon2_30/"
+	dirs_A_90 = "../result_nc_1day_delay/A/A_90/"
+	dirs_R2_90 = "../result_nc_1day_delay/R2/R2_90/"
+	dirs_theta_90 = "../result_nc_1day_delay/theta/theta_90/"
+	dirs_epsilon2_90 = "../result_nc_1day_delay/epsilon2/epsilon2_90/"
 
-	dirs_A_90 = "../result_h_1day_delay/A/A_90/"
-	dirs_R2_90 = "../result_h_1day_delay/R2/R2_90/"
-	dirs_theta_90 = "../result_h_1day_delay/theta/theta_90/"
-	dirs_epsilon2_90 = "../result_h_1day_delay/epsilon2/epsilon2_90/"
-
-	dirs_A_by_year = "../result_h_1day_delay/A/A_by_year/"
-	dirs_R2_by_year = "../result_h_1day_delay/R2/R2_by_year/"
-	dirs_theta_by_year = "../result_h_1day_delay/theta/theta_by_year/"
-	dirs_epsilon2_by_year = "../result_h_1day_delay/epsilon2/epsilon2_by_year/"
+	dirs_A_by_year = "../result_nc_1day_delay/A/A_by_year/"
+	dirs_R2_by_year = "../result_nc_1day_delay/R2/R2_by_year/"
+	dirs_theta_by_year = "../result_nc_1day_delay/theta/theta_by_year/"
+	dirs_epsilon2_by_year = "../result_nc_1day_delay/epsilon2/epsilon2_by_year/"
 
 	dirs_list = [
 		dirs_A_30,
@@ -452,80 +480,80 @@ def plot_data_map_1day_delay(num):
 		if not os.path.exists(dirs):
 			os.makedirs(dirs)
 
-	file_list_30 = sorted(glob.glob("../data/csv_Helmert_30_1day_delay/Helmert_30_1day_delay_*.csv"))
-	file_list_90 = sorted(glob.glob("../data/csv_Helmert_90_1day_delay/Helmert_90_1day_delay_*.csv"))
-	file_list_year = sorted(glob.glob("../data/csv_Helmert_by_year_1day_delay/Helmert_by_year_1day_delay_*.csv"))
+	file_list_30 = sorted(glob.glob("../data/csv_Helmert_30_netcdf4_1day_delay/Helmert_30_netcdf4_1day_delay_*.csv"))
+	file_list_90 = sorted(glob.glob("../data/csv_Helmert_90_netcdf4_1day_delay/csv_Helmert_90_netcdf4_1day_delay_*.csv"))
+	file_list_year = sorted(glob.glob("../data/csv_Helmert_by_year_netcdf4_1day_delay/Helmert_by_year_netcdf4_1day_delay_*.csv"))
 
+	y_list = ["03", "04", "05", "06", "07", "08", "09", "10", "13", "14", "15", "16"]
+	month_list = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"]
 	if num == 1:
 		for file in file_list_30:
 			data = pd.read_csv(file)
-			save_name_A = dirs_A_30 + file[56:62] + ".png"
+			save_name_A = dirs_A_30 + file[72:78] + ".png"
 			print(save_name_A)
 			visualize.plot_map_once(np.array(data["A"]), data_type="type_non_wind", show=False, 
 				save_name=save_name_A, vmax=0.02, vmin=0, cmap=plt.cm.jet)
-			save_name_theta = dirs_theta_30 + file[56:62] + ".png"
+			save_name_theta = dirs_theta_30 + file[72:78] + ".png"
 			print(save_name_theta)
 			visualize.plot_map_once(np.array(data["theta"]), data_type="type_non_wind", show=False, 
 				save_name=save_name_theta, vmax=180, vmin=-180, cmap=cm_angle_2)
-			save_name_R2 = dirs_R2_30 + file[56:62] + ".png"
+			save_name_R2 = dirs_R2_30 + file[72:78] + ".png"
 			print(save_name_R2)
 			visualize.plot_map_once(np.array(data["R2"]), data_type="type_non_wind", show=False, 
 				save_name=save_name_R2, vmax=1, vmin=0, cmap=plt.cm.jet)
-			save_name_e2 = dirs_epsilon2_30 + file[56:62] + ".png"
+			save_name_e2 = dirs_epsilon2_30 + file[72:78] + ".png"
 			print(save_name_e2)
 			visualize.plot_map_once(np.array(data["epsilon2"]), data_type="type_non_wind", show=False, 
 				save_name=save_name_e2, vmax=1.5, vmin=0, cmap=plt.cm.jet)
 	elif num == 2:
 		for file in file_list_90:
 			data = pd.read_csv(file)
-			save_name_A = dirs_A_90 + file[56:62] + ".png"
+			save_name_A = dirs_A_90 + file[72:78] + ".png"
 			print(save_name_A)
 			visualize.plot_map_once(np.array(data["A"]), data_type="type_non_wind", show=False, 
 				save_name=save_name_A, vmax=0.02, vmin=0, cmap=plt.cm.jet)
-			save_name_theta = dirs_theta_90 + file[56:62] + ".png"
+			save_name_theta = dirs_theta_90 + file[72:78] + ".png"
 			print(save_name_theta)
 			visualize.plot_map_once(np.array(data["theta"]), data_type="type_non_wind", show=False, 
 				save_name=save_name_theta, vmax=180, vmin=-180, cmap=cm_angle_2)
-			save_name_R2 = dirs_R2_90 + file[56:62] + ".png"
+			save_name_R2 = dirs_R2_90 + file[72:78] + ".png"
 			print(save_name_R2)
 			visualize.plot_map_once(np.array(data["R2"]), data_type="type_non_wind", show=False, 
 				save_name=save_name_R2, vmax=1, vmin=0, cmap=plt.cm.jet)
-			save_name_e2 = dirs_epsilon2_90 + file[56:62] + ".png"
+			save_name_e2 = dirs_epsilon2_90 + file[72:78] + ".png"
 			print(save_name_e2)
 			visualize.plot_map_once(np.array(data["epsilon2"]), data_type="type_non_wind", show=False, 
 				save_name=save_name_e2, vmax=1.5, vmin=0, cmap=plt.cm.jet)
 	elif num == 3:
 		for file in file_list_year:
 			data = pd.read_csv(file)
-			save_name_A = dirs_A_by_year + file[66:68] + ".png"
+			save_name_A = dirs_A_by_year + file[82:84] + ".png"
 			print(save_name_A)
 			visualize.plot_map_once(np.array(data["A"]), data_type="type_non_wind", show=False, 
 				save_name=save_name_A, vmax=0.02, vmin=0, cmap=plt.cm.jet)
-			save_name_theta = dirs_theta_by_year + file[66:68] + ".png"
+			save_name_theta = dirs_theta_by_year + file[82:84] + ".png"
 			print(save_name_theta)
 			visualize.plot_map_once(np.array(data["theta"]), data_type="type_non_wind", show=False, 
 				save_name=save_name_theta, vmax=180, vmin=-180, cmap=cm_angle_2)
-			save_name_R2 = dirs_R2_by_year + file[66:68] + ".png"
+			save_name_R2 = dirs_R2_by_year + file[82:84] + ".png"
 			print(save_name_R2)
 			visualize.plot_map_once(np.array(data["R2"]), data_type="type_non_wind", show=False, 
 				save_name=save_name_R2, vmax=1, vmin=0, cmap=plt.cm.jet)
-			save_name_e2 = dirs_epsilon2_by_year + file[66:68] + ".png"
+			save_name_e2 = dirs_epsilon2_by_year + file[82:84] + ".png"
 			print(save_name_e2)
 			visualize.plot_map_once(np.array(data["epsilon2"]), data_type="type_non_wind", show=False, 
 				save_name=save_name_e2, vmax=1.5, vmin=0, cmap=plt.cm.jet)
 
 
-#plot_data_map_1day_delay(num=1)
-#plot_data_map_1day_delay(num=2)
-#plot_data_map_1day_delay(num=3)
+#plot_nc_data_map_1day_delay(num=1)
+#plot_nc_data_map_1day_delay(num=2)
+#plot_nc_data_map_1day_delay(num=3)
 
 
 
-
-
-def plot_data_corr_1day_delay():
-	dirs_corr_map = "../result_h_1day_delay/corr_map/"
-	dirs_corr_map_search_grid = "../result_h_1day_delay/corr_map_search_grid/"
+def plot_nc_data_corr_1day_delay():
+	dirs_corr_map = "../result_nc_1day_delay/corr_map/"
+	dirs_corr_map_search_grid = "../result_nc_1day_delay/corr_map_search_grid/"
 
 	if not os.path.exists(dirs_corr_map):
 		os.makedirs(dirs_corr_map)
@@ -534,7 +562,7 @@ def plot_data_corr_1day_delay():
 
 	month_list = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"]
 	for month in month_list:
-		file_list = sorted(glob.glob("../data/csv_Helmert_30_1day_delay/Helmert_30_1day_delay_*" + month + ".csv"))
+		file_list = sorted(glob.glob("../data/csv_Helmert_30_netcdf4_1day_delay/Helmert_30_netcdf4_1day_delay_*" + month + ".csv"))
 		accumulate_data = []
 		for file in file_list:
 			data = pd.read_csv(file)
@@ -607,94 +635,94 @@ def plot_data_corr_1day_delay():
 		plt.close()
 		"""
 
-#plot_data_corr_1day_delay()
+#plot_nc_data_corr_1day_delay()
 
 
 
 
-def print_data_1day_delay():
-	def print_describe_data_30_1day_delay(dirs_30):
+def print_nc_data_1day_delay():
+	def print_describe_data_30_nc_1day_delay(dirs_30):
 		if not os.path.exists(dirs_30):
 			os.makedirs(dirs_30)
-		file_list = sorted(glob.glob("../data/csv_Helmert_30_1day_delay/Helmert_30_1day_delay_*.csv"))
+		file_list = sorted(glob.glob("../data/csv_Helmert_30_netcdf4_1day_delay/Helmert_30_netcdf4_1day_delay_*.csv"))
 		for file in file_list:
 			print(file)
 			df = pd.read_csv(file)
 			data = df.groupby("area_label")[["A", "theta", "R2", "N_c", "ic0_30", "sit_30", "ocean_u", "ocean_v", "mean_iw_u", "mean_iw_v", "mean_w_u", "mean_w_v"]].describe()
-			data.to_csv(dirs_30 + "describe_data_30_" + file[56:])
+			data.to_csv(dirs_30 + "describe_data_30_" + file[72:])
 
-	def print_describe_data_90_1day_delay(dirs_90):
+	def print_describe_data_90_nc_1day_delay(dirs_90):
 		if not os.path.exists(dirs_90):
 			os.makedirs(dirs_90)
-		file_list = sorted(glob.glob("../data/csv_Helmert_90_1day_delay/Helmert_90_1day_delay_*.csv"))
+		file_list = sorted(glob.glob("../data/csv_Helmert_90_netcdf4_1day_delay/Helmert_90_netcdf4_1day_delay_*.csv"))
 		for file in file_list:
 			print(file)
 			df = pd.read_csv(file)
 			data = df.groupby("area_label")[["A", "theta", "R2", "N_c", "ocean_u", "ocean_v", "mean_iw_u", "mean_iw_v", "mean_w_u", "mean_w_v"]].describe()
-			data.to_csv(dirs_90 + "describe_data_90_" + file[56:])
+			data.to_csv(dirs_90 + "describe_data_90_" + file[72:])
 
-	def print_describe_data_by_year_1day_delay(dirs_year):
+	def print_describe_data_by_year_nc_1day_delay(dirs_year):
 		if not os.path.exists(dirs_year):
 			os.makedirs(dirs_year)
 		#data_ex_dir = "../data/csv_Helmert_ex/Helmert_ex_200301.csv"
 		#data_ex = pd.read_csv(data_ex_dir)
-		file_list = sorted(glob.glob("../data/csv_Helmert_by_year_1day_delay/Helmert_by_year_1day_delay_*.csv"))
+		file_list = sorted(glob.glob("../data/csv_Helmert_by_year_netcdf4_1day_delay/Helmert_by_year_netcdf4_1day_delay_*.csv"))
 		for file in file_list:
 			print(file)
 			df = pd.read_csv(file)
 			#df = pd.concat([latlon_ex, df, data_ex.loc[:, ["coastal_region_1", "coastal_region_2", "area_label"]]], axis=1)
 			data = df.groupby("area_label")[["A", "theta", "R2", "N_c", "ocean_u", "ocean_v", "mean_iw_u", "mean_iw_v", "mean_w_u", "mean_w_v"]].describe()
-			data.to_csv(dirs_year + "describe_data_by_year_" + file[66:])
+			data.to_csv(dirs_year + "describe_data_by_year_" + file[82:])
 
-	def print_describe_data_all_region_1day_delay():
-		dirs_30 = "../result_h_1day_delay/print_data/print_data_30_all/"
+	def print_describe_data_all_region_nc_1day_delay():
+		dirs_30 = "../result_nc_1day_delay/print_data/print_data_30_all/"
 		if not os.path.exists(dirs_30):
 			os.makedirs(dirs_30)
-		file_list = sorted(glob.glob("../data/csv_Helmert_30_1day_delay/Helmert_30_1day_delay_*.csv"))
+		file_list = sorted(glob.glob("../data/csv_Helmert_30_netcdf4_1day_delay/Helmert_30_netcdf4_1day_delay_*.csv"))
 		for file in file_list:
 			print(file)
 			df = pd.read_csv(file).dropna()
 			data = df.loc[:, ["A", "theta", "R2", "N_c", "ocean_u", "ocean_v", "mean_iw_u", "mean_iw_v", "mean_w_u", "mean_w_v"]].describe()
-			data.to_csv(dirs_30 + "describe_data_30_all_" + file[56:])
+			data.to_csv(dirs_30 + "describe_data_30_all_" + file[72:])
 
-		dirs_90 = "../result_h_1day_delay/print_data/print_data_90_all/"
+		dirs_90 = "../result_nc_1day_delay/print_data/print_data_90_all/"
 		if not os.path.exists(dirs_90):
 			os.makedirs(dirs_90)
-		file_list = sorted(glob.glob("../data/csv_Helmert_90_1day_delay/Helmert_90_1day_delay_*.csv"))
+		file_list = sorted(glob.glob("../data/csv_Helmert_90_netcdf4_1day_delay/Helmert_90_netcdf4_1day_delay_*.csv"))
 		for file in file_list:
 			print(file)
 			df = pd.read_csv(file).dropna()
 			data = df.loc[:, ["A", "theta", "R2", "epsilon2", "N_c", "ocean_u", "ocean_v", "mean_iw_u", "mean_iw_v", "mean_w_u", "mean_w_v"]].describe()
-			data.to_csv(dirs_90 + "describe_data_90_all_" + file[56:])
+			data.to_csv(dirs_90 + "describe_data_90_all_" + file[72:])
 
-		dirs_year = "../result_h_1day_delay/print_data/print_data_by_year_all/"
+		dirs_year = "../result_nc_1day_delay/print_data/print_data_by_year_all/"
 		if not os.path.exists(dirs_year):
 			os.makedirs(dirs_year)
 		#data_ex_dir = "../data/csv_Helmert_ex/Helmert_ex_200301.csv"
 		#data_ex = pd.read_csv(data_ex_dir)
-		file_list = sorted(glob.glob("../data/csv_Helmert_by_year_1day_delay/Helmert_by_year_1day_delay_*.csv"))
+		file_list = sorted(glob.glob("../data/csv_Helmert_by_year_netcdf4_1day_delay/Helmert_by_year_netcdf4_1day_delay_*.csv"))
 		for file in file_list:
 			print(file)
 			df = pd.read_csv(file)
 			#df = pd.concat([latlon_ex, df, data_ex.loc[:, ["coastal_region_1", "coastal_region_2", "area_label"]]], axis=1).dropna()
 			data = df.loc[:, ["A", "theta", "R2", "N_c", "ocean_u", "ocean_v", "mean_iw_u", "mean_iw_v", "mean_w_u", "mean_w_v"]].describe()
-			data.to_csv(dirs_year + "describe_data_by_year_all_" + file[66:])
+			data.to_csv(dirs_year + "describe_data_by_year_all_" + file[82:])
 
 	dirs_30 = "../result_h_1day_delay/print_data/print_data_30/"
 	dirs_90 = "../result_h_1day_delay/print_data/print_data_90/"
 	dirs_year = "../result_h_1day_delay/print_data/print_data_by_year/"
-	print_describe_data_30_1day_delay(dirs_30)
-	print_describe_data_90_1day_delay(dirs_90)
-	print_describe_data_by_year_1day_delay(dirs_year)
-	print_describe_data_all_region_1day_delay()
+	print_describe_data_30_nc_1day_delay(dirs_30)
+	print_describe_data_90_nc_1day_delay(dirs_90)
+	print_describe_data_by_year_nc_1day_delay(dirs_year)
+	print_describe_data_all_region_nc_1day_delay()
 
-#print_data_1day_delay()
-
-
+#print_nc_data_1day_delay()
 
 
 
-def plot_ts_1day_delay(num):
+
+
+def plot_ts_nc_1day_delay(num):
 	y_list = ["03", "04", "05", "06", "07", "08", "09", "10", "13", "14", "15", "16"]
 	month_list = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"]
 	def ts_30_by_month(dirs):
@@ -709,7 +737,7 @@ def plot_ts_1day_delay(num):
 			data_A_month, data_theta_month, data_R2_month, data_e2_month = [], [], [], []
 			for month in month_list:
 				print(year + month)
-				file_list = "../data/csv_Helmert_30_1day_delay/Helmert_30_1day_delay_20" + year + month + ".csv"
+				file_list = "../data/csv_Helmert_30_netcdf4_1day_delay/Helmert_30_netcdf4_1day_delay_20" + year + month + ".csv"
 				df = pd.read_csv(file_list)
 				data = df.groupby("area_label")[["A", "theta", "R2", "epsilon2"]].describe()
 
@@ -811,7 +839,7 @@ def plot_ts_1day_delay(num):
 			print("*************** " + month + " ***************")
 			data_A_year, data_theta_year, data_R2_year, data_e2_year = [], [], [], []
 			for year in y_list:
-				file_list = "../data/csv_Helmert_30_1day_delay/Helmert_30_1day_delay_20" + year + month + ".csv"
+				file_list = "../data/csv_Helmert_30_netcdf4_1day_delay/Helmert_30_netcdf4_1day_delay_20" + year + month + ".csv"
 				df = pd.read_csv(file_list)
 				data = df.groupby("area_label")[["A", "theta", "R2", "epsilon2"]].describe()
 
@@ -834,7 +862,7 @@ def plot_ts_1day_delay(num):
 			data_R2_year = np.array(data_R2_year)
 			data_e2_year = np.array(data_e2_year)
 
-			file_by_year = "../data/csv_Helmert_by_year_1day_delay/Helmert_by_year_1day_delay_" + month + ".csv"
+			file_by_year = "../data/csv_Helmert_by_year_netcdf4_1day_delay/Helmert_by_year_netcdf4_1day_delay_" + month + ".csv"
 			data_by_year = pd.read_csv(file_by_year)
 			data_by_year = data_by_year.groupby("area_label")[["A", "theta", "R2", "epsilon2"]].describe()
 
@@ -856,7 +884,7 @@ def plot_ts_1day_delay(num):
 					facecolor='green', alpha=0.3)
 				ax.fill_between(dates2, data_A_year[N_dates1:,i,2], data_A_year[N_dates1:,i,3],
 					facecolor='green', alpha=0.3)
-				ax.set_ylim([0, 0.015])
+				ax.set_ylim([0, 0.02])
 				ax.set_ylabel('A')
 				try:
 					ax.xaxis.set_major_formatter(mdates.DateFormatter('%y'))
@@ -947,16 +975,15 @@ def plot_ts_1day_delay(num):
 				plt.savefig(save_name, dpi=300)
 				plt.close()
 
-	dirs_ts_30_by_year = "../result_h_1day_delay/ts_30_by_year/"
-	dirs_ts_by_month = "../result_h_1day_delay/ts_by_month/"
+	dirs_ts_30_by_year = "../result_nc_1day_delay/ts_30_by_year/"
+	dirs_ts_by_month = "../result_nc_1day_delay/ts_by_month/"
 	if num == 1:
 		ts_30_by_month(dirs_ts_by_month)
 	elif num == 2:
 		ts_30_by_year(dirs_ts_30_by_year)
 
-#plot_ts_1day_delay(1)
-#plot_ts_1day_delay(2)
-
+#plot_ts_nc_1day_delay(1)
+#plot_ts_nc_1day_delay(2)
 
 
 
