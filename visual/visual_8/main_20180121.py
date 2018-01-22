@@ -98,8 +98,8 @@ def get_helmert_30_nc_1day_delay():
 				_, result_u10, result_v10 = calc_data.get_1month_netcdf4_data(nc_fname_2)
 				w10_u_array_2 = result_u10[0, :].reshape((1, -1))
 				w10_v_array_2 = result_v10[0, :].reshape((1, -1))
-				w10_u_array = np.vtack((w10_u_array_1, w10_u_array_2))
-				w10_v_array = np.vtack((w10_v_array_1, w10_v_array_2))
+				w10_u_array = np.vstack((w10_u_array_1, w10_u_array_2))
+				w10_v_array = np.vstack((w10_v_array_1, w10_v_array_2))
 			w10_uv = []
 			for day_idx in range(L):
 				tmp_1 = w10_u_array[day_idx, :].reshape((-1,1))
@@ -138,6 +138,9 @@ def get_helmert_30_nc_1day_delay():
 				sit_145 = sit[grid145]
 				sit_list.append(sit_145)
 
+			ic0_array = np.array(ic0_list)
+			sit_array = np.array(sit_list)
+
 			gw_ave = np.nanmean(gw_array, axis=0)
 			iw_ave = np.nanmean(iw_array, axis=0)
 			ic0_ave = np.nanmean(ic0_array, axis=0)
@@ -145,6 +148,10 @@ def get_helmert_30_nc_1day_delay():
 			ic0_med = np.nanmedian(ic0_array, axis=0)
 			sit_med = np.nanmedian(sit_array, axis=0)
 
+			L_gw = L
+			if L_gw != L_iw:
+				print("continuing the for loop...")
+				continue
 			gw_minus_ave = gw_array - np.tile(gw_ave, (L_gw,1,1))
 			iw_minus_ave = iw_array - np.tile(iw_ave, (L_iw,1,1))
 
@@ -226,7 +233,7 @@ def get_helmert_90_1day_delay_csv():
 
 			L = get_month_len(year, m3[0]) + get_month_len(year, m3[1]) + get_month_len(year, m3[2])
 			start_0101 = date(int("20"+year), 1, 1)
-			start_date = date(int("20"+year), int(month), 1)
+			start_date = date(int("20"+year), int(m3[0]), 1)
 			start_from_0101_idx = (start_date-start_0101).days
 			#print(start_0101, start_date, start_from_0101_idx)
 			if m3[2] != "12":
@@ -248,8 +255,8 @@ def get_helmert_90_1day_delay_csv():
 				_, result_u10, result_v10 = calc_data.get_1month_netcdf4_data(nc_fname_2)
 				w10_u_array_2 = result_u10[0, :].reshape((1, -1))
 				w10_v_array_2 = result_v10[0, :].reshape((1, -1))
-				w10_u_array = np.vtack((w10_u_array_1, w10_u_array_2))
-				w10_v_array = np.vtack((w10_v_array_1, w10_v_array_2))
+				w10_u_array = np.vstack((w10_u_array_1, w10_u_array_2))
+				w10_v_array = np.vstack((w10_v_array_1, w10_v_array_2))
 			w10_uv = []
 			for day_idx in range(L):
 				tmp_1 = w10_u_array[day_idx, :].reshape((-1,1))
@@ -269,6 +276,11 @@ def get_helmert_90_1day_delay_csv():
 				df_ice_wind[df_ice_wind==999.] = np.nan
 				ice_wind = np.array(df_ice_wind, dtype='float32')/100
 				iw_list.append(ice_wind[:, [0,1]])
+
+			L_gw = L
+			if L_gw != L_iw:
+				print("continuing the for loop...")
+				continue
 
 			iw_array = np.array(iw_list)
 			gw_array = np.where(np.isnan(iw_array), np.nan, w10_uv)
@@ -373,8 +385,8 @@ def get_helmert_by_year_netcdf4_1day_delay():
 				_, result_u10, result_v10 = calc_data.get_1month_netcdf4_data(nc_fname_2)
 				w10_u_array_2 = result_u10[0, :].reshape((1, -1))
 				w10_v_array_2 = result_v10[0, :].reshape((1, -1))
-				w10_u_array = np.vtack((w10_u_array_1, w10_u_array_2))
-				w10_v_array = np.vtack((w10_v_array_1, w10_v_array_2))
+				w10_u_array = np.vstack((w10_u_array_1, w10_u_array_2))
+				w10_v_array = np.vstack((w10_v_array_1, w10_v_array_2))
 			w10_uv = []
 			for day_idx in range(L):
 				tmp_1 = w10_u_array[day_idx, :].reshape((-1,1))
@@ -385,7 +397,10 @@ def get_helmert_by_year_netcdf4_1day_delay():
 
 			iw_file_list = iw_file_list + glob.glob("../data/csv_iw/" + year + month + "*.csv")
 
+		gw_array = gw_array[1:, :, :]
+
 		iw_file_list = sorted(iw_file_list)
+		L_iw = len(iw_file_list)
 		iw_list = []
 		for iw_fname in iw_file_list:
 			print("\t{}".format(iw_fname))
@@ -393,6 +408,11 @@ def get_helmert_by_year_netcdf4_1day_delay():
 			df_ice_wind[df_ice_wind==999.] = np.nan
 			ice_wind = np.array(df_ice_wind, dtype='float32')/100
 			iw_list.append(ice_wind[:, [0,1]])
+
+		L_gw = gw_array.shape[0]
+		if L_gw != L_iw:
+			print("continuing the for loop...")
+			continue
 
 		iw_array = np.array(iw_list)
 		gw_array = np.where(np.isnan(iw_array), np.nan, gw_array)
