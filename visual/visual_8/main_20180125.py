@@ -392,8 +392,7 @@ def ts_all_with_trend(num):
 		plt.close()
 
 
-
-
+###############################################################################################################
 
 def plot_data_corr_for_mombetsu():
 	dirs_corr_map = "../result_h_1day_delay/corr_map/"
@@ -458,11 +457,195 @@ def plot_data_corr_for_mombetsu():
 		plt.close()
 
 
+###############################################################################################################
+
+def corr_sns():
+	dirs_pair = "../result_h_1day_delay/scatter_pair/"
+	dirs_heat = "../result_h_1day_delay/heatmap/"
+	dirs_gw = "../data/corr_gw/"
+	if not os.path.exists(dirs_pair):
+		os.makedirs(dirs_pair)
+	if not os.path.exists(dirs_heat):
+		os.makedirs(dirs_heat)
+	if not os.path.exists(dirs_gw):
+		os.makedirs(dirs_gw)
+
+	month_list = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"]
+	for month in month_list:
+		def get_corr_csv(rt):
+			file_list = sorted(glob.glob("../data/csv_Helmert_30_1day_delay/Helmert_30_1day_delay_*" + month + ".csv"))
+			accumulate_data = []
+			accumulate_data_std = []
+			for file in file_list:
+				data_std = pd.read_csv(file)
+				data_std.loc[data_std["A"].isnull(), "ic0_30"] = np.nan
+				accumulate_data_std.append(np.array(data_std["ic0_30"]))
+
+				data_corr = data_std.loc[:, ["A", "theta", "R2", "epsilon2", "ic0_30", "sit_30"]]
+				accumulate_data.append(np.array(data_corr))
+
+			accumulate_data_std = np.array(accumulate_data_std)
+			ic0_std = np.nanstd(accumulate_data_std, axis=0)
+			ic0_count = np.nansum(~np.isnan(accumulate_data_std), axis=0)
+			ic0_std = np.where(ic0_count>5, ic0_std, np.nan)
+
+			accumulate_data = np.array(accumulate_data)
+			corr_list = []
+			for i in range(145**2):
+				data_A = accumulate_data[:, i, 0]
+				#data_A = data_A[~np.isnan(data_A)]
+				data_ic0 = accumulate_data[:, i, 4]
+				tmp_df = pd.DataFrame({"data_A": data_A, "data_ic0": data_ic0})
+				if len(tmp_df.dropna()) <= 5:
+					corr = np.nan
+				else:
+					corr = tmp_df.dropna().corr()
+					corr = np.array(corr)[0,1]
+					#print(i, corr)
+				corr_list.append(corr)
+
+			corr_df = pd.DataFrame({"corr": np.array(corr_list), "ic0_std": ic0_std})
+			corr_df.to_csv(dirs_gw + "corr_gw_" + month + ".csv", index=False)
+			if rt ==True:
+				return corr_df
+			else:
+				return 1
+
+		corr_df = get_corr_csv(rt=True)
+		#corr_df = pd.read_csv("../data/corr_gw/corr_gw_" + month + ".csv")
+		data_by_year = pd.read_csv("../data/csv_Helmert_by_year_1day_delay/Helmert_by_year_1day_delay_" + month + ".csv")
+		data_sns = pd.concat([corr_df, data_by_year.loc[:, ["A", "R2", "epsilon2"]]], axis=1).dropna()
+
+		sns.pairplot(data_sns)
+		plt.savefig(dirs_pair + "scatter_pair_" + month + ".png", dpi=150)
+		plt.close()
+
+		cr_matrix = data_sns.corr()
+		mask = np.zeros_like(cr_matrix, dtype=np.bool)
+		mask[np.triu_indices_from(mask)] = True
+		try:
+			sns.set(font_scale=0.7)
+			sns.heatmap(cr_matrix, mask=mask, cbar=True, annot=True, square=True, fmt='.2f', annot_kws={'size': 10}, yticklabels=cr, xticklabels=cr, cmap="bwr", vmin=-1, vmax=1)
+			plt.savefig(dirs_heat + "heatmap_" + month + ".png", dpi=150)
+			plt.close()
+		except:
+			print("\tcontinue point: 1")
+
+
+		data_sns_plus = pd.concat([data_sns, data_by_year["area_label"]], axis=1).dropna()
+		for area_index in [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]:
+			data_plot = data_sns_plus.loc[data_sns_plus.area_label==area_index, ["corr", "ic0_std", "A", "R2", "epsilon2"]]
+			try:
+				sns.pairplot(data_plot)
+				plt.savefig(dirs_pair + "scatter_pair_area_" + str(area_index) + "_" + month + ".png", dpi=150)
+				plt.close()
+			except:
+				print("\tcontinue point: 2")
+
+			cr_matrix = data_plot.corr()
+			mask = np.zeros_like(cr_matrix, dtype=np.bool)
+			mask[np.triu_indices_from(mask)] = True
+			try:
+				sns.set(font_scale=0.7)
+				sns.heatmap(cr_matrix, mask=mask, cbar=True, annot=True, square=True, fmt='.2f', annot_kws={'size': 10}, yticklabels=cr, xticklabels=cr, cmap="bwr", vmin=-1, vmax=1)
+				plt.savefig(dirs_heat + "heatmap_area_" + str(area_index) + "_" + month + ".png", dpi=150)
+				plt.close()
+			except:
+				print("\tcontinue point: 3")
 
 
 
 
+def corr_sns_nc():
+	dirs_pair = "../result_nc_1day_delay/scatter_pair/"
+	dirs_heat = "../result_nc_1day_delay/heatmap/"
+	if not os.path.exists(dirs_pair):
+		os.makedirs(dirs_pair)
+	if not os.path.exists(dirs_heat):
+		os.makedirs(dirs_heat)
 
+	month_list = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"]
+	for month in month_list:
+		def get_corr_csv(rt):
+			file_list = sorted(glob.glob("../data/csv_Helmert_30_netcdf4_1day_delay/Helmert_30_netcdf4_1day_delay_*" + month + ".csv"))
+			accumulate_data = []
+			accumulate_data_std = []
+			for file in file_list:
+				data_std = pd.read_csv(file)
+				data_std.loc[data_std["A"].isnull(), "ic0_30"] = np.nan
+				data_std = np.array(data_std["ic0_30"])
+				accumulate_data_std.append(data_std)
+
+				data_corr = data.loc[:, ["A", "theta", "R2", "epsilon2", "ic0_30", "sit_30"]]
+				accumulate_data.append(np.array(data_corr))
+
+			accumulate_data_std = np.array(accumulate_data_std)
+			ic0_std = np.nanstd(accumulate_data_std, axis=0)
+			ic0_count = np.nansum(~np.isnan(accumulate_data_std), axis=0)
+			ic0_std = np.where(ic0_count>5, ic0_std, np.nan)
+
+			corr_list = []
+			for i in range(145**2):
+				data_A = accumulate_data[:, i, 0]
+				#data_A = data_A[~np.isnan(data_A)]
+				data_ic0 = accumulate_data[:, i, 4]
+				tmp_df = pd.DataFrame({"data_A": data_A, "data_ic0": data_ic0})
+				if len(tmp_df.dropna()) <= 5:
+					corr = np.nan
+				else:
+					corr = tmp_df.dropna().corr()
+					corr = np.array(corr)[0,1]
+					#print(i, corr)
+				corr_list.append(corr)
+
+			corr_df = pd.DataFrame({"corr": np.array(corr_list), "ic0_std": ic0_std})
+			corr_df.to_csv("../data/corr_nc/corr_nc_" + month + ".csv", index=False)
+			if rt ==True:
+				return corr_df
+			else:
+				return 1
+
+		corr_df = get_corr_csv(rt=True)
+		#corr_df = pd.read_csv("../data/corr_gw/corr_gw_" + month + ".csv")
+		data_by_year = pd.read_csv("../data/csv_Helmert_netcdf4_by_year_1day_delay_" + month + ".csv")
+		data_sns = pd.concat([corr_df, data_by_year.loc[:, ["A", "R2", "epsilon2"]]], axis=1)
+
+		sns.pairplot(data_sns)
+		plt.savefig(dirs_pair + "scatter_pair_" + month + ".png", dpi=150)
+		plt.close()
+
+		cr_matrix = data_sns.corr()
+		mask = np.zeros_like(cr_matrix, dtype=np.bool)
+		mask[np.triu_indices_from(mask)] = True
+		try:
+			sns.set(font_scale=0.7)
+			sns.heatmap(cr_matrix, mask=mask, cbar=True, annot=True, square=True, fmt='.2f', annot_kws={'size': 10}, yticklabels=cr, xticklabels=cr, cmap="bwr", vmin=-1, vmax=1)
+			plt.savefig(dirs_heat + "heatmap_" + month + ".png", dpi=150)
+			plt.close()
+		except:
+			continue
+
+		data_sns_plus = pd.concat([data_sns, data_by_year["area_label"]], axis=1)
+		for area_index in [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]:
+			data_plot = data_sns_plus.loc[data_sns_plus.area_label==area_index, ["corr", "ic0_std", "A", "R2", "epsilon2"]]
+
+			sns.pairplot(data_plot)
+			plt.savefig(dirs_pair + "scatter_pair_area_" + str(area_index) + "_" + month + ".png", dpi=150)
+			plt.close()
+
+			cr_matrix = data_plot.corr()
+			mask = np.zeros_like(cr_matrix, dtype=np.bool)
+			mask[np.triu_indices_from(mask)] = True
+			try:
+				sns.set(font_scale=0.7)
+				sns.heatmap(cr_matrix, mask=mask, cbar=True, annot=True, square=True, fmt='.2f', annot_kws={'size': 10}, yticklabels=cr, xticklabels=cr, cmap="bwr", vmin=-1, vmax=1)
+				plt.savefig(dirs_heat + "heatmap_area_" + str(area_index) + "_" + month + ".png", dpi=150)
+				plt.close()
+			except:
+				continue
+
+
+###############################################################################################################
 
 
 
@@ -477,8 +660,9 @@ def plot_data_corr_for_mombetsu():
 #plot_ic0_std()
 #ts_all_with_trend(num=1)
 #ts_all_with_trend(num=2)
-plot_data_corr_for_mombetsu()
-
+#plot_data_corr_for_mombetsu()
+#corr_sns()
+#corr_sns_nc()
 
 
 
