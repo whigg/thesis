@@ -58,7 +58,7 @@ cm_angle_2 = visualize.generate_cmap([
 
 def plot_map_for_thesis(data, save_name, cmap, vmax, vmin):
 		fig = plt.figure(figsize=(5, 5))
-		m = Basemap(lon_0=180, boundinglat=62.5, resolution='i', projection='npstere')
+		m = Basemap(lon_0=180, boundinglat=50, resolution='i', projection='npstere')
 		m.drawcoastlines(color = '0.15')
 		m.fillcontinents(color='#555555')
 		x, y = m(np.array(latlon_ex.Lon), np.array(latlon_ex.Lat))
@@ -122,7 +122,8 @@ def plot_A_std():
 
 
 def plot_data_corr_with_ic0():
-	month_list = ["07", "08", "09"]
+	#month_list = ["07", "08", "09"]
+	month_list = ["05", "06", "10"]
 	for month in month_list:
 		print(month)
 		data = pd.read_csv("../data/corr_gw/corr_gw_" + month + ".csv").dropna()
@@ -154,7 +155,9 @@ def plot_data_corr_with_ic0():
 
 def plot_data_corr_map_with_ic0():
 	dirs = "../result_h_1day_delay/corr_ic0_search_detail/"
-	month_list = ["07", "08", "09"]
+	if not os.path.exists(dirs):
+		os.makedirs(dirs)
+	month_list = ["05", "06", "07", "08", "09", "10"]
 	for month in month_list:
 		print(month)
 		data = pd.read_csv("../data/corr_gw/corr_gw_" + month + ".csv").dropna()
@@ -182,7 +185,7 @@ def plot_data_corr_map_with_ic0():
 		plot_map_for_thesis(data_std, save_name_std, plt.cm.jet, 25, 0)
 		"""
 
-		th_ic0 = 0.15
+		th_ic0 = 15
 		th_A = 0.002
 		th_corr_list = [0.5, 0.6, 0.7, 0.8]
 		for th_corr in th_corr_list:
@@ -194,26 +197,26 @@ def plot_data_corr_map_with_ic0():
 			print("grid_1_t: {}\ngrid_1_f: {}\nggrid_2_t: {}\ngrid_2_f: {}\ngrid_3: {}".format(
 				grid_1_t, grid_1_f, grid_2_t, grid_2_f, grid_3))
 
-			m = Basemap(lon_0=180, boundinglat=62.5, resolution='l', projection='npstere')
+			m = Basemap(lon_0=180, boundinglat=50, resolution='l', projection='npstere')
 			lon = np.array(latlon_ex.Lon)
 			lat = np.array(latlon_ex.Lat)
 			x, y = m(lon, lat)
 			m.drawcoastlines(color = '0.15')
 			m.fillcontinents(color='#555555')
-			m.scatter(x[grid_1_t], y[grid_1_t], marker='o', color="b", s=4, alpha=0.9)
-			m.scatter(x[grid_1_f], y[grid_1_f], marker='+', color="r", s=4, alpha=0.9)
-			plt.savefig(dirs + "ic0_std_A_std_th_" + str(int(th_corr*10)) + "_" + month + ".png", dpi=200)
+			m.scatter(x[grid_1_t], y[grid_1_t], marker='o', color="b", s=2, alpha=0.9)
+			m.scatter(x[grid_1_f], y[grid_1_f], marker='+', color="r", s=2, alpha=0.9)
+			plt.savefig(dirs + "ic0_std_A_std_1_th_" + str(int(th_corr*10)) + "_" + month + ".png", dpi=200)
 			plt.close()
 			m.drawcoastlines(color = '0.15')
 			m.fillcontinents(color='#555555')
-			m.scatter(x[grid_2_t], y[grid_2_t], marker='o', color="b", s=4, alpha=0.9)
-			m.scatter(x[grid_2_f], y[grid_2_f], marker='+', color="r", s=4, alpha=0.9)
-			plt.savefig(dirs + "ic0_std_A_std_th_" + str(int(th_corr*10)) + "_" + month + ".png", dpi=200)
+			m.scatter(x[grid_2_t], y[grid_2_t], marker='o', color="b", s=2, alpha=0.9)
+			m.scatter(x[grid_2_f], y[grid_2_f], marker='+', color="r", s=2, alpha=0.9)
+			plt.savefig(dirs + "ic0_std_A_std_2_th_" + str(int(th_corr*10)) + "_" + month + ".png", dpi=200)
 			plt.close()
 			m.drawcoastlines(color = '0.15')
 			m.fillcontinents(color='#555555')
-			m.scatter(x[grid_3], y[grid_3], marker='o', color = "r", s=4, alpha=0.9)
-			plt.savefig(dirs + "ic0_std_A_std_th_" + str(int(th_corr*10)) + "_" + month + ".png", dpi=200)
+			m.scatter(x[grid_3], y[grid_3], marker='o', color = "r", s=2, alpha=0.9)
+			plt.savefig(dirs + "ic0_std_A_std_3_th_" + str(int(th_corr*10)) + "_" + month + ".png", dpi=200)
 			plt.close()
 
 			"""
@@ -224,7 +227,7 @@ def plot_data_corr_map_with_ic0():
 			"""
 
 
-plot_data_corr_map_with_ic0()
+#plot_data_corr_map_with_ic0()
 
 
 
@@ -258,7 +261,7 @@ def plot_e2_std():
 		print(month)
 		data = np.array(pd.read_csv("../data/corr_gw/corr_gw_" + month + ".csv")["e2_std"])
 		save_name = "../result_h_1day_delay/std_map/e2_std_" + month + ".png"
-		plot_map_for_thesis(data, save_name, cmap=plt.cm.jet, vmax=None, vmin=0)
+		plot_map_for_thesis(data, save_name, cmap=plt.cm.jet, vmax=0.3, vmin=0)
 
 #plot_e2_std()
 
@@ -284,25 +287,26 @@ def get_sit_std():
 
 		data_2 = pd.read_csv("../data/corr_gw/corr_gw_" + month + ".csv")
 		result = pd.concat([corr_df, data_2], axis=1)
-		result.to_csv("../data/corr_nc/corr_nc_" + month + ".csv", index=False)
+		result.to_csv("../data/corr_gw/corr_gw_" + month + ".csv", index=False)
+
+#get_sit_std()
 
 
-###
 
 def plot_sit_std():
 	month_list = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"]
 	for month in month_list:
 		print(month)
-		data = np.array(pd.read_csv("../data/corr_gw/corr_gw_" + month + ".csv")["A_std"])
-		save_name = "../result_h_1day_delay/std_map/A_std_" + month + ".png"
-		plot_map_for_thesis(data, save_name, cmap=plt.cm.jet, vmax=0.0035, vmin=0)
+		data = np.array(pd.read_csv("../data/corr_gw/corr_gw_" + month + ".csv")["sit_std"])
+		save_name = "../result_h_1day_delay/std_map/sit_std_" + month + ".png"
+		plot_map_for_thesis(data, save_name, cmap=plt.cm.jet, vmax=1000, vmin=0)
 
 #plot_sit_std()
 
 
 
 def plot_data_corr_with_sit():
-	month_list = ["07", "08", "09"]
+	month_list = ["05", "06", "07", "08", "09", "10"]
 	for month in month_list:
 		print(month)
 		data = pd.read_csv("../data/corr_gw/corr_gw_" + month + ".csv").dropna()
@@ -317,15 +321,15 @@ def plot_data_corr_with_sit():
 			data_low = data.loc[(data["corr"]<corr_th)&(data["corr"]>-corr_th), :].dropna()
 			hl = ["high", "low"]
 			for i, data_tmp in enumerate([data_high, data_low]):
-				x, y, z = np.array(data_tmp["A_std"]), np.array(data_tmp["ic0_std"]), np.array(data_tmp["corr"])
+				x, y, z = np.array(data_tmp["A_std"]), np.array(data_tmp["sit_std"]), np.array(data_tmp["corr"])
 				plt.scatter(x, y, s=7.5, c=z, cmap='jet', vmax=1, vmin=-1)
 				plt.xlim([0.00, 0.005])
 				plt.xlabel("A_std")
-				plt.ylabel("ic0_std")
+				plt.ylabel("SIT_std")
 				plt.grid()
 				plt.colorbar()
 				#plt.show()
-				plt.savefig("ic0_std_A_std_corr_th_" + str(j+5) + "_" + hl[i] + "_" + month + ".png", dpi=150)
+				plt.savefig("sit_std_A_std_corr_th_" + str(j+5) + "_" + hl[i] + "_" + month + ".png", dpi=150)
 				plt.close()
 
 #plot_data_corr_with_sit()
@@ -334,7 +338,9 @@ def plot_data_corr_with_sit():
 
 def plot_data_corr_map_with_sit():
 	dirs = "../result_h_1day_delay/corr_ic0_search_detail/"
-	month_list = ["07", "08", "09"]
+	if not os.path.exists(dirs):
+		os.makedirs(dirs)
+	month_list = ["05", "06", "07", "08", "09", "10"]
 	for month in month_list:
 		print(month)
 		data = pd.read_csv("../data/corr_gw/corr_gw_" + month + ".csv").dropna()
@@ -362,38 +368,38 @@ def plot_data_corr_map_with_sit():
 		plot_map_for_thesis(data_std, save_name_std, plt.cm.jet, 25, 0)
 		"""
 
-		th_ic0 = 0.15
+		th_sit = 250
 		th_A = 0.002
 		th_corr_list = [0.5, 0.6, 0.7, 0.8]
 		for th_corr in th_corr_list:
-			grid_1_t = np.array(data[(data["corr"]<=-th_corr)&(data["ic0_std"]>=th_ic0)&(data["A_std"]>=th_A)].index)
-			grid_1_f = np.array(data[(data["corr"]<=-th_corr)&((data["ic0_std"]<th_ic0)|(data["A_std"]<th_A))].index)
-			grid_2_t = np.array(data[(data["corr"]>=th_corr)&((data["ic0_std"]<th_ic0)|(data["A_std"]<th_A))].index)
-			grid_2_f = np.array(data[(data["corr"]>=th_corr)&(data["ic0_std"]>=th_ic0)&(data["A_std"]>=th_A)].index)
-			grid_3 = np.array(data[(data["corr"]>-th_corr)&(data["corr"]<th_corr)&(data["ic0_std"]>=th_ic0)&(data["A_std"]>=th_A)].index)
+			grid_1_t = np.array(data[(data["corr"]<=-th_corr)&(data["sit_std"]>=th_sit)&(data["A_std"]>=th_A)].index)
+			grid_1_f = np.array(data[(data["corr"]<=-th_corr)&((data["sit_std"]<th_sit)|(data["A_std"]<th_A))].index)
+			grid_2_t = np.array(data[(data["corr"]>=th_corr)&((data["sit_std"]<th_sit)|(data["A_std"]<th_A))].index)
+			grid_2_f = np.array(data[(data["corr"]>=th_corr)&(data["sit_std"]>=th_sit)&(data["A_std"]>=th_A)].index)
+			grid_3 = np.array(data[(data["corr"]>-th_corr)&(data["corr"]<th_corr)&(data["sit_std"]>=th_sit)&(data["A_std"]>=th_A)].index)
 			print("grid_1_t: {}\ngrid_1_f: {}\nggrid_2_t: {}\ngrid_2_f: {}\ngrid_3: {}".format(
 				grid_1_t, grid_1_f, grid_2_t, grid_2_f, grid_3))
 
-			m = Basemap(lon_0=180, boundinglat=62.5, resolution='l', projection='npstere')
+			m = Basemap(lon_0=180, boundinglat=50, resolution='l', projection='npstere')
 			lon = np.array(latlon_ex.Lon)
 			lat = np.array(latlon_ex.Lat)
 			x, y = m(lon, lat)
 			m.drawcoastlines(color = '0.15')
 			m.fillcontinents(color='#555555')
-			m.scatter(x[grid_1_t], y[grid_1_t], marker='o', color="b", s=4, alpha=0.9)
-			m.scatter(x[grid_1_f], y[grid_1_f], marker='+', color="r", s=4, alpha=0.9)
-			plt.savefig(dirs + "ic0_std_A_std_th_" + str(int(th_corr*10)) + "_" + month + ".png", dpi=200)
+			m.scatter(x[grid_1_t], y[grid_1_t], marker='o', color="b", s=2, alpha=0.9)
+			m.scatter(x[grid_1_f], y[grid_1_f], marker='+', color="r", s=2, alpha=0.9)
+			plt.savefig(dirs + "sit_std_A_std_1_th_" + str(int(th_corr*10)) + "_" + month + ".png", dpi=200)
 			plt.close()
 			m.drawcoastlines(color = '0.15')
 			m.fillcontinents(color='#555555')
-			m.scatter(x[grid_2_t], y[grid_2_t], marker='o', color="b", s=4, alpha=0.9)
-			m.scatter(x[grid_2_f], y[grid_2_f], marker='+', color="r", s=4, alpha=0.9)
-			plt.savefig(dirs + "ic0_std_A_std_th_" + str(int(th_corr*10)) + "_" + month + ".png", dpi=200)
+			m.scatter(x[grid_2_t], y[grid_2_t], marker='o', color="b", s=2, alpha=0.9)
+			m.scatter(x[grid_2_f], y[grid_2_f], marker='+', color="r", s=2, alpha=0.9)
+			plt.savefig(dirs + "sit_std_A_std_2_th_" + str(int(th_corr*10)) + "_" + month + ".png", dpi=200)
 			plt.close()
 			m.drawcoastlines(color = '0.15')
 			m.fillcontinents(color='#555555')
-			m.scatter(x[grid_3], y[grid_3], marker='o', color = "r", s=4, alpha=0.9)
-			plt.savefig(dirs + "ic0_std_A_std_th_" + str(int(th_corr*10)) + "_" + month + ".png", dpi=200)
+			m.scatter(x[grid_3], y[grid_3], marker='o', color = "r", s=2, alpha=0.9)
+			plt.savefig(dirs + "sit_std_A_std_3_th_" + str(int(th_corr*10)) + "_" + month + ".png", dpi=200)
 			plt.close()
 
 			"""
@@ -403,8 +409,82 @@ def plot_data_corr_map_with_sit():
 				plt.annotate(str(grid), xy=(x[grid], y[grid]), xycoords='data', xytext=(x[grid], y[grid]), textcoords='data', color='b')
 			"""
 
-
 #plot_data_corr_map_with_sit()
+
+
+
+"""
+ic0とsitを組み合わせる
+"""
+def plot_data_corr_map_with_ic0_sit():
+	dirs = "../result_h_1day_delay/corr_ic0_search_detail/"
+	if not os.path.exists(dirs):
+		os.makedirs(dirs)
+	month_list = ["05", "06", "07", "08", "09", "10"]
+	for month in month_list:
+		print(month)
+		data = pd.read_csv("../data/corr_gw/corr_gw_" + month + ".csv").dropna()
+		"""
+		3種類の図
+		1
+			相関が低い時に閾値を満たす
+			相関が低いのに閾値を満たしていない（偶然）
+		2
+			相関が高い時に閾値を満たしていない
+			相関が高いのに閾値を満たす（偶然）
+		3
+			無相関なのに閾値を満たす
+		"""
+		th_ic0 = 15
+		th_sit = 250
+		th_A = 0.002
+		th_corr_list = [0.5, 0.6, 0.7, 0.8]
+		for th_corr in th_corr_list:
+			grid_1_t = np.array(data[(data["corr"]<=-th_corr)&((data["ic0_std"]>=th_ic0)&(data["A_std"]>=th_A))].index)
+			grid_1_f = np.array(data[(data["corr"]<=-th_corr)&((data["ic0_std"]<th_ic0)|(data["A_std"]<th_A))].index)
+			grid_2_t = np.array(data[(data["corr"]>=th_corr)&((data["ic0_std"]<th_ic0)|(data["A_std"]<th_A))].index)
+			grid_2_f = np.array(data[(data["corr"]>=th_corr)&(data["ic0_std"]>=th_ic0)&(data["A_std"]>=th_A)].index)
+
+			grid_1_t = np.array(data[(data["corr"]<=-th_corr)&(data["ic0_std"]>=th_ic0)&(data["sit_std"]>=th_sit)&(data["A_std"]>=th_A)].index)
+			grid_1_f = np.array(data[(data["corr"]<=-th_corr)&((data["ic0_std"]<th_ic0)|(data["sit_std"]<th_sit)|(data["A_std"]<th_A))].index)
+			grid_2_t = np.array(data[(data["corr"]>=th_corr)&((data["ic0_std"]<th_ic0)|(data["sit_std"]<th_sit)|(data["A_std"]<th_A))].index)
+			grid_2_f = np.array(data[(data["corr"]>=th_corr)&(data["ic0_std"]>=th_ic0)&(data["sit_std"]>=th_sit)&(data["A_std"]>=th_A)].index)
+			grid_3 = np.array(data[(data["corr"]>-th_corr)&(data["corr"]<th_corr)&(data["ic0_std"]>=th_ic0)&(data["sit_std"]>=th_sit)&(data["A_std"]>=th_A)].index)
+			print("grid_1_t: {}\ngrid_1_f: {}\nggrid_2_t: {}\ngrid_2_f: {}\ngrid_3: {}".format(
+				grid_1_t, grid_1_f, grid_2_t, grid_2_f, grid_3))
+
+			m = Basemap(lon_0=180, boundinglat=50, resolution='l', projection='npstere')
+			lon = np.array(latlon_ex.Lon)
+			lat = np.array(latlon_ex.Lat)
+			x, y = m(lon, lat)
+			m.drawcoastlines(color = '0.15')
+			m.fillcontinents(color='#555555')
+			m.scatter(x[grid_1_t], y[grid_1_t], marker='o', color="b", s=2, alpha=0.9)
+			m.scatter(x[grid_1_f], y[grid_1_f], marker='+', color="r", s=2, alpha=0.9)
+			plt.savefig(dirs + "both_std_A_std_1_th_" + str(int(th_corr*10)) + "_" + month + ".png", dpi=200)
+			plt.close()
+			m.drawcoastlines(color = '0.15')
+			m.fillcontinents(color='#555555')
+			m.scatter(x[grid_2_t], y[grid_2_t], marker='o', color="b", s=2, alpha=0.9)
+			m.scatter(x[grid_2_f], y[grid_2_f], marker='+', color="r", s=2, alpha=0.9)
+			plt.savefig(dirs + "both_std_A_std_2_th_" + str(int(th_corr*10)) + "_" + month + ".png", dpi=200)
+			plt.close()
+			m.drawcoastlines(color = '0.15')
+			m.fillcontinents(color='#555555')
+			m.scatter(x[grid_3], y[grid_3], marker='o', color = "r", s=2, alpha=0.9)
+			plt.savefig(dirs + "both_std_A_std_3_th_" + str(int(th_corr*10)) + "_" + month + ".png", dpi=200)
+			plt.close()
+
+			"""
+			for grid in grid_pos:
+				plt.annotate(str(grid), xy=(x[grid], y[grid]), xycoords='data', xytext=(x[grid], y[grid]), textcoords='data', color='r')
+			for grid in grid_neg:
+				plt.annotate(str(grid), xy=(x[grid], y[grid]), xycoords='data', xytext=(x[grid], y[grid]), textcoords='data', color='b')
+			"""
+
+#plot_data_corr_map_with_ic0_sit()
+
+
 
 
 ###############################################################################################################
@@ -585,7 +665,7 @@ def ts_all_with_trend(num):
 
 def ts_all_detail_gw():
 	"""
-	エリア0, 10, 12, 16
+	エリア0, 12, 16
 	"""
 	dirs = "../result_h_1day_delay/ts_all_with_trend_select/"
 	if not os.path.exists(dirs):
@@ -601,7 +681,7 @@ def ts_all_detail_gw():
 	for year in y_list:
 		date_7_12.append(pd.to_datetime("20"+year+"-07-01"))
 
-	for area_index in [0,12,16]:
+	for area_index in [16]:
 		data_A_all_year = []
 		data_theta_all_year = []
 		data_R2_all_year = []
@@ -656,72 +736,81 @@ def ts_all_detail_gw():
 			residual_3 = res_3.resid
 			seasonal_3 = res_3.seasonal 
 			trend_3 = res_3.trend
-			axes[0,0].plot(dates1, y1_A, "-", color="k")
-			axes[0,0].plot(dates2, y2_A, "-", color="k")
-			axes[0,0].set_ylim([0.005, 0.015])
+			axes[0].plot(dates1, y1_A, "-", color="k")
+			axes[0].plot(dates2, y2_A, "-", color="k")
+			axes[0].set_ylim([0.005, 0.015])
 			if area_index == 12:
-				min_index = np.argsort(y2_A)[:4]
-				min_value = np.sort(y2_A)[:4]
+				min_index = np.sort(np.argsort(y2_A)[:4])
+				min_value = y2_A[min_index]
 				min_linear = min_value - signal.detrend(min_value)
-				axes[0,0].plot(dates2, min_linear, "--c")
-				max_index = np.argsort(y2_A)[::-1][:4]
-				max_value = np.sort(y2_A)[::-1][:4]
+				axes[0].plot(dates2[min_index], min_linear, "--c")
+				max_index = np.sort(np.argsort(y2_A)[::-1][:4])
+				max_value = y2_A[max_index]
 				max_linear = max_value - signal.detrend(max_value)
-				axes[0,0].plot(dates2, max_linear, "--c")
-			axes[0,0].set_ylabel('Observed')
-			axes[1,0].plot(dates1, trend_1, "-", color="k")
-			axes[1,0].plot(dates2, trend_2, "-", color="k")
-			axes[1,0].plot(dates1, y1_A-yd1_A, "--b", label="Trend")
-			axes[1,0].plot(dates2, y2_A-yd2_A, "--b", label="Trend")
-			axes[1,0].set_ylabel('Trend')
-			axes[2,0].plot(dates1, seasonal_1, "-", color="k")
-			axes[2,0].plot(dates2, seasonal_2, "-", color="k")
-			axes[2,0].set_ylabel('Seasonal')
-			axes[3,0].plot(dates1, residual_1, "-", color="k")
-			axes[3,0].plot(dates2, residual_2, "-", color="k")
-			axes[3,0].set_ylabel('Residual')
+				axes[0].plot(dates2[max_index], max_linear, "--c")
+			axes[0].set_ylabel('Observed')
+			axes[1].plot(dates1, trend_1, "-", color="k")
+			axes[1].plot(dates2, trend_2, "-", color="k")
+			axes[1].plot(dates1, y1_A-yd1_A, "--b", label="Trend")
+			axes[1].plot(dates2, y2_A-yd2_A, "--b", label="Trend")
+			axes[1].set_ylabel('Trend')
+			axes[2].plot(dates1, seasonal_1, "-", color="k")
+			axes[2].plot(dates2, seasonal_2, "-", color="k")
+			axes[2].set_ylabel('Seasonal')
+			axes[3].plot(dates1, residual_1, "-", color="k")
+			axes[3].plot(dates2, residual_2, "-", color="k")
+			axes[3].set_ylabel('Residual')
 			for item in date_1_6:
 				for axis in axes:
 					axis.axvline(item, color='coral', linestyle='-', lw=0.75, alpha=0.75)
 			for item in date_7_12:
 				for axis in axes:
 					axis.axvline(item, color='palegreen', linestyle='-', lw=0.75, alpha=0.75)
-			axes[0,0].xaxis.set_major_formatter(mdates.DateFormatter('%Y%m'))
-			axes[1,0].xaxis.set_major_formatter(mdates.DateFormatter('%Y%m'))
-			axes[2,0].xaxis.set_major_formatter(mdates.DateFormatter('%Y%m'))
-			axes[3,0].xaxis.set_major_formatter(mdates.DateFormatter('%Y%m'))
-			plt.grid(True)
-			plt.savefig(dirs + "A_no_std_area_" + str(area_index) + ".png", dpi=150)
+			axes[0].xaxis.set_major_formatter(mdates.DateFormatter('%Y%m'))
+			axes[0].grid(True)
+			axes[1].xaxis.set_major_formatter(mdates.DateFormatter('%Y%m'))
+			axes[1].grid(True)
+			axes[2].xaxis.set_major_formatter(mdates.DateFormatter('%Y%m'))
+			axes[2].grid(True)
+			axes[3].xaxis.set_major_formatter(mdates.DateFormatter('%Y%m'))
+			axes[3].grid(True)
+			plt.tight_layout()
+			plt.savefig(dirs + "A_area_" + str(area_index) + "_2periods.png", dpi=150)
 			plt.close()
 
 			fig, axes = plt.subplots(4, 1)
 			fig.figsize = (12, 9)
-			axes[0,0].plot(dates1, y1_A, "-", color="k")
-			axes[0,0].plot(dates2, y2_A, "-", color="k")
-			axes[0,0].set_ylim([0.005, 0.015])
-			axes[0,0].set_ylabel('Observed')
-			axes[1,0].plot(dates1, trend_3, "-", color="k")
-			axes[1,0].plot(dates2, trend_3, "-", color="k")
-			axes[1,0].plot(dates3, y3_A-yd3_A, "--b", label="Trend")
-			axes[1,0].set_ylabel('Trend')
-			axes[2,0].plot(dates1, seasonal_3, "-", color="k")
-			axes[2,0].plot(dates2, seasonal_3, "-", color="k")
-			axes[2,0].set_ylabel('Seasonal')
-			axes[3,0].plot(dates1, residual_3, "-", color="k")
-			axes[3,0].plot(dates2, residual_3, "-", color="k")
-			axes[3,0].set_ylabel('Residual')
+			axes[0].plot(dates1, y1_A, "-", color="k")
+			axes[0].plot(dates2, y2_A, "-", color="k")
+			axes[0].set_ylim([0.005, 0.015])
+			axes[0].set_ylabel('Observed')
+			axes[1].plot(dates1, trend_3[:len(dates1)], "-", color="k")
+			axes[1].plot(dates2, trend_3[len(dates1):], "-", color="k")
+			axes[1].plot(dates1, (y3_A-yd3_A)[:len(dates1)], "--b", label="Trend")
+			axes[1].plot(dates2, (y3_A-yd3_A)[len(dates1):], "--b", label="Trend")
+			axes[1].set_ylabel('Trend')
+			axes[2].plot(dates1, seasonal_3[:len(dates1)], "-", color="k")
+			axes[2].plot(dates2, seasonal_3[len(dates1):], "-", color="k")
+			axes[2].set_ylabel('Seasonal')
+			axes[3].plot(dates1, residual_3[:len(dates1)], "-", color="k")
+			axes[3].plot(dates2, residual_3[len(dates1):], "-", color="k")
+			axes[3].set_ylabel('Residual')
 			for item in date_1_6:
 				for axis in axes:
 					axis.axvline(item, color='coral', linestyle='-', lw=0.75, alpha=0.75)
 			for item in date_7_12:
 				for axis in axes:
 					axis.axvline(item, color='palegreen', linestyle='-', lw=0.75, alpha=0.75)
-			axes[0,0].xaxis.set_major_formatter(mdates.DateFormatter('%Y%m'))
-			axes[1,0].xaxis.set_major_formatter(mdates.DateFormatter('%Y%m'))
-			axes[2,0].xaxis.set_major_formatter(mdates.DateFormatter('%Y%m'))
-			axes[3,0].xaxis.set_major_formatter(mdates.DateFormatter('%Y%m'))
-			plt.grid(True)
-			plt.savefig(dirs + "A_no_std_area_" + str(area_index) + ".png", dpi=150)
+			axes[0].xaxis.set_major_formatter(mdates.DateFormatter('%Y%m'))
+			axes[0].grid(True)
+			axes[1].xaxis.set_major_formatter(mdates.DateFormatter('%Y%m'))
+			axes[1].grid(True)
+			axes[2].xaxis.set_major_formatter(mdates.DateFormatter('%Y%m'))
+			axes[2].grid(True)
+			axes[3].xaxis.set_major_formatter(mdates.DateFormatter('%Y%m'))
+			axes[3].grid(True)
+			plt.tight_layout()
+			plt.savefig(dirs + "A_area_" + str(area_index) + "_1period.png", dpi=150)
 			plt.close()
 
 		else:
@@ -748,77 +837,97 @@ def ts_all_detail_gw():
 			residual_3 = res_3.resid
 			seasonal_3 = res_3.seasonal 
 			trend_3 = res_3.trend
-			axes[0,0].plot(dates1, y1_A, "-", color="k")
-			axes[0,0].plot(dates2, y2_A, "-", color="k")
-			axes[0,0].set_ylim([0.005, 0.015])
-			min_index = np.argsort(y2_A)[:4]
-			min_value = np.sort(y2_A)[:4]
+			axes[0].plot(dates1, y1_A, "-", color="k")
+			axes[0].plot(dates2, y2_A, "-", color="k")
+			axes[0].set_ylim([0.005, 0.015])
+			"""
+			min_index = np.sort(np.argsort(y2_A)[:4])
+			min_value = y2_A[min_index]
 			min_linear = min_value - signal.detrend(min_value)
-			axes[0,0].plot(dates2, min_linear, "--c")
-			max_index = np.argsort(y2_A)[::-1][:4]
-			max_value = np.sort(y2_A)[::-1][:4]
+			axes[0].plot(dates2[min_index], min_linear, "--c")
+			max_index = np.sort(np.argsort(y2_A)[::-1][:4])
+			max_value = y2_A[max_index]
 			max_linear = max_value - signal.detrend(max_value)
-			axes[0,0].plot(dates2, max_linear, "--c")
-			axes[0,0].set_ylabel('Observed')
-			axes[1,0].plot(dates1, trend_1, "-", color="k")
-			axes[1,0].plot(dates2, trend_2, "-", color="k")
-			axes[1,0].plot(dates1, y1_A-yd1_A, "--b", label="Trend")
-			axes[1,0].plot(dates2, y2_A-yd2_A, "--b", label="Trend")
-			axes[1,0].set_ylabel('Trend')
-			axes[2,0].plot(dates1, seasonal_1, "-", color="k")
-			axes[2,0].plot(dates2, seasonal_2, "-", color="k")
-			axes[2,0].set_ylabel('Seasonal')
-			axes[3,0].plot(dates1, residual_1, "-", color="k")
-			axes[3,0].plot(dates2, residual_2, "-", color="k")
-			axes[3,0].set_ylabel('Residual')
+			axes[0].plot(dates2[max_index], max_linear, "--c")
+			"""
+			axes[0].set_ylabel('Observed')
+			axes[1].plot(dates1, trend_1, "-", color="k")
+			axes[1].plot(dates2, trend_2, "-", color="k")
+			axes[1].plot(dates1, y1_A-yd1_A, "--b", label="Trend")
+			axes[1].plot(dates2, y2_A-yd2_A, "--b", label="Trend")
+			axes[1].set_ylabel('Trend')
+			axes[2].plot(dates1, seasonal_1, "-", color="k")
+			axes[2].plot(dates2, seasonal_2, "-", color="k")
+			axes[2].set_ylabel('Seasonal')
+			axes[3].plot(dates1, residual_1, "-", color="k")
+			axes[3].plot(dates2, residual_2, "-", color="k")
+			axes[3].set_ylabel('Residual')
 			for item in date_1_6:
 				for axis in axes:
 					axis.axvline(item, color='coral', linestyle='-', lw=0.75, alpha=0.75)
 			for item in date_7_12:
 				for axis in axes:
 					axis.axvline(item, color='palegreen', linestyle='-', lw=0.75, alpha=0.75)
-			axes[0,0].xaxis.set_major_formatter(mdates.DateFormatter('%Y%m'))
-			axes[1,0].xaxis.set_major_formatter(mdates.DateFormatter('%Y%m'))
-			axes[2,0].xaxis.set_major_formatter(mdates.DateFormatter('%Y%m'))
-			axes[3,0].xaxis.set_major_formatter(mdates.DateFormatter('%Y%m'))
-			plt.grid(True)
-			plt.savefig(dirs + "A_no_std_area_" + str(area_index) + ".png", dpi=150)
+			axes[0].xaxis.set_major_formatter(mdates.DateFormatter('%Y%m'))
+			axes[0].grid(True)
+			axes[1].xaxis.set_major_formatter(mdates.DateFormatter('%Y%m'))
+			axes[1].grid(True)
+			axes[2].xaxis.set_major_formatter(mdates.DateFormatter('%Y%m'))
+			axes[2].grid(True)
+			axes[3].xaxis.set_major_formatter(mdates.DateFormatter('%Y%m'))
+			axes[3].grid(True)
+			plt.tight_layout()
+			plt.savefig(dirs + "A_area_" + str(area_index) + "_2periods.png", dpi=150)
 			plt.close()
 
 			fig, axes = plt.subplots(4, 1)
 			fig.figsize = (12, 9)
-			axes[0,0].plot(dates1, y1_A, "-", color="k")
-			axes[0,0].plot(dates2, y2_A, "-", color="k")
-			axes[0,0].set_ylim([0.005, 0.015])
-			axes[0,0].set_ylabel('Observed')
-			axes[1,0].plot(dates1, trend_3, "-", color="k")
-			axes[1,0].plot(dates2, trend_3, "-", color="k")
-			axes[1,0].plot(dates3, y3_A-yd3_A, "--b", label="Trend")
-			axes[1,0].set_ylabel('Trend')
-			axes[2,0].plot(dates1, seasonal_3, "-", color="k")
-			axes[2,0].plot(dates2, seasonal_3, "-", color="k")
-			axes[2,0].set_ylabel('Seasonal')
-			axes[3,0].plot(dates1, residual_3, "-", color="k")
-			axes[3,0].plot(dates2, residual_3, "-", color="k")
-			axes[3,0].set_ylabel('Residual')
+			axes[0].plot(dates1, y1_A, "-", color="k")
+			axes[0].plot(dates2, y2_A, "-", color="k")
+			axes[0].set_ylim([0.005, 0.015])
+			axes[0].set_ylabel('Observed')
+			axes[1].plot(dates1, trend_3[:len(dates1)], "-", color="k")
+			axes[1].plot(dates2, trend_3[len(dates1):], "-", color="k")
+			axes[1].plot(dates1, (y3_A-yd3_A)[:len(dates1)], "--b", label="Trend")
+			axes[1].plot(dates2, (y3_A-yd3_A)[len(dates1):], "--b", label="Trend")
+			axes[1].set_ylabel('Trend')
+			axes[2].plot(dates1, seasonal_3[:len(dates1)], "-", color="k")
+			axes[2].plot(dates2, seasonal_3[len(dates1):], "-", color="k")
+			axes[2].set_ylabel('Seasonal')
+			axes[3].plot(dates1, residual_3[:len(dates1)], "-", color="k")
+			axes[3].plot(dates2, residual_3[len(dates1):], "-", color="k")
+			axes[3].set_ylabel('Residual')
 			for item in date_1_6:
 				for axis in axes:
 					axis.axvline(item, color='coral', linestyle='-', lw=0.75, alpha=0.75)
 			for item in date_7_12:
 				for axis in axes:
 					axis.axvline(item, color='palegreen', linestyle='-', lw=0.75, alpha=0.75)
-			axes[0,0].xaxis.set_major_formatter(mdates.DateFormatter('%Y%m'))
-			axes[1,0].xaxis.set_major_formatter(mdates.DateFormatter('%Y%m'))
-			axes[2,0].xaxis.set_major_formatter(mdates.DateFormatter('%Y%m'))
-			axes[3,0].xaxis.set_major_formatter(mdates.DateFormatter('%Y%m'))
-			plt.grid(True)
-			plt.savefig(dirs + "A_no_std_area_" + str(area_index) + ".png", dpi=150)
+			axes[0].xaxis.set_major_formatter(mdates.DateFormatter('%Y%m'))
+			axes[0].grid(True)
+			axes[1].xaxis.set_major_formatter(mdates.DateFormatter('%Y%m'))
+			axes[1].grid(True)
+			axes[2].xaxis.set_major_formatter(mdates.DateFormatter('%Y%m'))
+			axes[2].grid(True)
+			axes[3].xaxis.set_major_formatter(mdates.DateFormatter('%Y%m'))
+			axes[3].grid(True)
+			plt.tight_layout()
+			plt.savefig(dirs + "A_area_" + str(area_index) + "_1period.png", dpi=150)
 			plt.close()
 
+ts_all_detail_gw()
+
 """
-save_nameの処理
+area: 0
+0.00857295658546 0.00992932390264 0.00866077915702
+area: 12
+0.0086092725633 0.0100837618877 0.00863707468825
+area: 16
+0.0070019179796 0.00927542668803 0.00740482458103
+[Finished in 61.9s]
 """
 
+###############################################################################################################
 
 
 
