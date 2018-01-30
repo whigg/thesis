@@ -915,7 +915,7 @@ def ts_all_detail_gw():
 			plt.savefig(dirs + "A_area_" + str(area_index) + "_1period.png", dpi=150)
 			plt.close()
 
-ts_all_detail_gw()
+#ts_all_detail_gw()
 
 """
 area: 0
